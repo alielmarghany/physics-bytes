@@ -126,7 +126,7 @@ function readToken(t) {
 // ---------- seed ----------
 if (!one('SELECT id FROM users WHERE role = ?', 'admin')) {
   const email = process.env.ADMIN_EMAIL || 'admin@ahmedalaa.com';
-  const pw = process.env.ADMIN_PASSWORD || 'sensei-2026';
+  const pw = process.env.ADMIN_PASSWORD || crypto.randomBytes(9).toString('base64url'); // random unless set
   run('INSERT INTO users (name,email,phone,password_hash,role) VALUES (?,?,?,?,?)',
     'Mr. Ahmed Alaa', email, '01000000000', hashPassword(pw), 'admin');
   console.log(`\n  Admin created → ${email} / ${pw}  (change it after first login)\n`);

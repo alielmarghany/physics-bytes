@@ -13,12 +13,9 @@ Requires Node 22.13+ (uses the built-in `node:sqlite`). Data lives in `data/plat
 
 ## Admin
 
-First start creates an admin account:
+First start creates an admin account and prints its email and a random password in the terminal.
 
-- Email: `admin@ahmedalaa.com`
-- Password: `sensei-2026`
-
-Override with `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars before the first start. Change it after logging in (Profile page).
+Set `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars before the first start to choose them. Change the password after logging in (Profile page).
 
 Admin pages (`#/admin`):
 
