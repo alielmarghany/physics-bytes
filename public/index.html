@@ -9,25 +9,25 @@
     try { document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark'; } catch (e) { document.documentElement.dataset.theme = 'dark'; }
   </script>
   <meta name="description" content="Learn physics with Mr. Ahmed Alaa — video lessons, chapter quizzes, exams and progress tracking." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23e3352b'/><text x='32' y='46' font-size='40' text-anchor='middle' fill='%23fff8ec' font-family='serif'>物</text></svg>" />
+  <link rel="icon" type="image/png" href="img/logo-mark.png" />
+  <link rel="apple-touch-icon" href="img/logo-mark.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=DotGothic16&family=DM+Mono:wght@400;500&family=Shippori+Mincho+B1:wght@600;800&family=Yuji+Boku&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Poppins:wght@700;800&family=DotGothic16&family=DM+Mono:wght@400;500&family=Shippori+Mincho+B1:wght@600;800&family=Yuji+Boku&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div id="preloader" aria-hidden="true">
-    <div class="pre-mark"><span class="hanko">物理</span></div>
+    <div class="pre-mark"><img class="pb-mark pre" src="img/logo-mark.png" alt="" width="291" height="387"><div class="pb-word"><b>Physics bytes</b><small>By Eng/Ahmed Alaa</small></div></div>
     <span id="pct" class="mono">0%</span>
   </div>
   <div class="grain" aria-hidden="true"></div>
   <div id="petals" aria-hidden="true"></div>
   <header class="nav" id="nav">
-    <a href="#/" class="brand">
-      <span class="hanko">物理</span>
-      <span class="brand-text mono"><b>PHYSICS BYTES</b><small>物理道</small></span>
+    <a href="#/" class="brand" aria-label="Physics bytes — home">
+      <img class="pb-mark in-nav" src="img/logo-mark.png" alt="" width="291" height="387">
+      <span class="pb-word"><b>Physics bytes</b><small>By Eng/Ahmed Alaa</small></span>
     </a>
-    <a href="#/" class="nav-name">AHMED ALAA</a>
     <div class="nav-right"><span id="navright"></span>
       <button class="theme-btn" id="themeBtn" aria-label="Toggle light / dark mode" title="Light / dark mode"><span class="sun">日</span><span class="moon">月</span></button>
       <button class="burger" id="burger" aria-label="Menu"><span></span><span></span></button>

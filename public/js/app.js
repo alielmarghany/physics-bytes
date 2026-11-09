@@ -321,7 +321,7 @@ async function viewLanding(app) {
 const footer = () => `<footer class="foot"><div class="wrap">
   <div class="foot-big" aria-hidden="true">AHMED ALAA</div>
   <div class="row between mono small">
-    <span class="row"><span class="hanko" style="width:30px;height:30px;font-size:.7rem">物理</span> MR. AHMED ALAA · PHYSICS</span>
+    <span class="row foot-logo"><img src="img/logo-mark.png" alt="" width="24" height="32"><span class="pb-word"><b>Physics bytes</b><small>By Eng/Ahmed Alaa</small></span></span>
     <span class="row"><a href="#/courses">COURSES</a><a href="#/${state.me ? 'dashboard' : 'register'}">${state.me ? 'MY PROGRESS' : 'JOIN'}</a></span>
     <span>© ${new Date().getFullYear()} · 物理道</span></div></div></footer>`;
 
