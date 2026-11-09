@@ -1,0 +1,19 @@
+{
+  "name": "ahmed-alaa-physics",
+  "version": "1.0.0",
+  "description": "Physics learning platform for Mr. Ahmed Alaa",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

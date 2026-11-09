@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b0a0d" />
+  <title>Physics Bytes · Mr. Ahmed Alaa</title>
+  <script>
+    try { document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark'; } catch (e) { document.documentElement.dataset.theme = 'dark'; }
+  </script>
+  <meta name="description" content="Learn physics with Mr. Ahmed Alaa — video lessons, chapter quizzes, exams and progress tracking." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23e3352b'/><text x='32' y='46' font-size='40' text-anchor='middle' fill='%23fff8ec' font-family='serif'>物</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=DotGothic16&family=DM+Mono:wght@400;500&family=Shippori+Mincho+B1:wght@600;800&family=Yuji+Boku&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="preloader" aria-hidden="true">
+    <div class="pre-mark"><span class="hanko">物理</span></div>
+    <span id="pct" class="mono">0%</span>
+  </div>
+  <div class="grain" aria-hidden="true"></div>
+  <div id="petals" aria-hidden="true"></div>
+  <header class="nav" id="nav">
+    <a href="#/" class="brand">
+      <span class="hanko">物理</span>
+      <span class="brand-text mono"><b>PHYSICS BYTES</b><small>物理道</small></span>
+    </a>
+    <a href="#/" class="nav-name">AHMED ALAA</a>
+    <div class="nav-right"><span id="navright"></span>
+      <button class="theme-btn" id="themeBtn" aria-label="Toggle light / dark mode" title="Light / dark mode"><span class="sun">日</span><span class="moon">月</span></button>
+      <button class="burger" id="burger" aria-label="Menu"><span></span><span></span></button>
+    </div>
+  </header>
+  <nav class="links" id="links"></nav>
+  <div class="demo-pill mono">Design preview · sample data</div>
+  <main id="app"></main>
+  <button id="totop" class="mono" aria-label="Back to top">上</button>
+  <div id="modal-root"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="js/demo.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
