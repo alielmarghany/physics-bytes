@@ -509,10 +509,6 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .92rem; }
 :root[data-theme='light'] .theme-btn .sun, :root:not([data-theme='light']) .theme-btn .moon { transform: translateY(140%) rotate(90deg); opacity: 0; }
 @media (max-width: 520px) { .theme-btn { width: 36px; height: 36px; } }
 
-/* ---------- static demo badge (GitHub Pages preview) ---------- */
-.demo-pill { display: none; }
-.demo .demo-pill { display: block; position: fixed; left: 1.2rem; bottom: 1.4rem; z-index: 50; font-size: .6rem; padding: .45rem .8rem; border-radius: 999px;
-  background: var(--glass); border: 1px solid var(--line-2); color: var(--muted); backdrop-filter: blur(8px); }
 
 /* ---------- Physics bytes logo ---------- */
 .nav { grid-template-columns: 1fr auto; }
