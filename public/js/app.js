@@ -8,6 +8,8 @@ const fmtDate = (s) => (s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleDateStri
 const GRADES = ['1st Secondary', '2nd Secondary', '3rd Secondary'];
 const TX = { recharge: 'Recharge', purchase: 'Purchase', admin: 'Manual adjustment' };
 const LITE = document.documentElement.classList.contains('lite');
+/* first name without a title such as "Eng." or "Mr." */
+const firstName = (n) => { const w = String(n || '').trim().split(/\s+/); return w.find((x) => !/^(eng|mr|mrs|ms|dr|م|د|أ)$/i.test(x.replace(/\.$/, ''))) || w[0] || ''; };
 
 const state = { me: null, cleanups: [] };
 window.state = state;
@@ -164,9 +166,10 @@ function renderNav() {
   const row = (h, l, i) => `<a href="#${h}" class="mlink ${(h === '/' ? r === '/' : r.startsWith(h)) ? 'active' : ''}" style="--i:${i}">
       <span class="mi">0${i + 1}</span><span class="ml">${l}</span><span class="ma">${ic('upright', LANG === 'ar' ? 'flip' : '')}</span></a>`;
   $('#links').innerHTML = `<div class="menu-in">${items.map(([h, l], i) => row(h, l, i)).join('')}
-    ${me ? `<button class="mlink" id="logout" style="--i:${items.length}"><span class="mi">0${items.length + 1}</span><span class="ml">${t('Log out')}</span><span class="ma">${ic('logout')}</span></button>` : ''}</div>
+    ${me ? `<button class="mlink" id="logout" style="--i:${items.length}"><span class="mi">0${items.length + 1}</span><span class="ml">${t('Log out')}</span><span class="ma">${ic('logout')}</span></button>` : ''}
+      <div class="menu-tools"><button class="pill" data-theme-toggle>${document.documentElement.dataset.theme === 'light' ? t('Dark mode') : t('Light mode')}</button><button class="pill" data-lang-toggle>${LANG === 'ar' ? 'English' : 'العربية'}</button></div></div>
     <aside class="menu-aside">
-      <div class="ma-card"><span class="msun"></span><h3>${me ? t('Welcome back, {name}', { name: esc(me.name.split(' ')[0]) }) : t('Start your physics journey')}</h3>
+      <div class="ma-card"><span class="msun"></span><h3>${me ? t('Welcome back, {name}', { name: esc(firstName(me.name)) }) : t('Start your physics journey')}</h3>
         <p>${me ? t('Pick up right where you stopped.') : t('Video lessons, quizzes and exams with Eng. Ahmed Alaa.')}</p>
         <a class="btn shu sm" href="#/${me ? 'dashboard' : 'register'}">${me ? t('My progress') : t('Create free account')} ${ic('next', 'arrow')}</a></div>
       <div class="mwaves seigaiha"></div>
@@ -178,6 +181,8 @@ function renderNav() {
   $('#langCode').textContent = LANG === 'ar' ? 'AR' : 'EN';
   $$('#langMenu button').forEach((b) => b.classList.toggle('on', b.dataset.lang === LANG));
   $('#menuLabel').textContent = menuOpen() ? t('CLOSE') : t('MENU');
+  $('[data-theme-toggle]')?.addEventListener('click', () => { setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'); renderNav(); });
+  $('[data-lang-toggle]')?.addEventListener('click', () => { setMenu(false); setLang(LANG === 'ar' ? 'en' : 'ar'); router(); });
   $('#logout')?.addEventListener('click', async () => { await api('/auth/logout', { method: 'POST' }); state.me = null; setMenu(false); location.hash = '/'; toast(t('Logged out. See you soon!'), true); });
 }
 $('#burger').addEventListener('click', () => setMenu(!menuOpen()));
@@ -309,7 +314,7 @@ async function viewLanding(app) {
     </div>
   </section>
 
-  <div class="ribbon" aria-hidden="true"><div class="ribbon-track">${ribbonItems}${ribbonItems}</div></div>
+  <div class="ribbon-wrap" aria-hidden="true"><div class="ribbon"><div class="ribbon-track">${ribbonItems}${ribbonItems}</div></div></div>
 
   <section class="shelf"><div class="wrap">
     <div class="shelf-head reveal">
@@ -337,13 +342,13 @@ async function viewLanding(app) {
   <section class="quote lazy">
     ${ENSO('q-enso')}
     <div class="washi w1">${ic('bolt')}</div><div class="washi w2">${ic('atom')}</div><div class="washi w3">${ic('magnet')}</div>
-    <h2 class="reveal zoom">${t("Physics isn't memorised —")}<br><span class="red">${t("it's understood.")}</span></h2>
+    <h2 class="reveal zoom">${t("Physics isn't memorised.")}<br><span class="red">${t("It's understood.")}</span></h2>
     <p class="reveal" style="--d:.1s">${t('More than equations, more than grades — learn to see the laws behind everything that moves around you.')}</p>
   </section>
 
   <section class="band lazy"><div class="wrap">
     <div class="section-title reveal"><span class="eyebrow">${t('Features')}</span><h2 class="title-line">${t('Everything in one place')}</h2></div>
-    <div class="grid g3">
+    <div class="grid g3f">
       ${[['play', 'HD video lessons', 'Lessons organised by chapter, with a protected player and a view limit per lesson.'],
         ['quiz', 'Quizzes & exams', 'A quiz after every chapter plus full exams with a timer, instant marking and explained answers.'],
         ['chart', 'Progress tracking', "See the lessons you've finished, your scores and what to revise next."],
@@ -356,7 +361,7 @@ async function viewLanding(app) {
 
   ${cats.length ? `<section class="band lazy" style="padding-top:1rem"><div class="wrap">
     <div class="section-title reveal"><span class="eyebrow">${t('Grades')}</span><h2 class="title-line">${t('Choose your year')}</h2></div>
-    <div class="grid g3">
+    <div class="grid g3f">
       ${cats.map((c, i) => `<a class="card grade-card reveal zoom" style="--d:${i * .08}s" href="#/courses?cat=${c.id}"><span class="gnum display-num">${i + 1}</span>
         <span class="tag">${t('{n} courses', { n: c.course_count })}</span><h3>${esc(c.name)}</h3><p class="muted">${esc(c.description || '')}</p><span class="arrow">${ic('next')}</span><span class="gwave seigaiha" aria-hidden="true"></span></a>`).join('')}
     </div>
@@ -377,6 +382,9 @@ async function viewLanding(app) {
     const step = (row.firstElementChild?.offsetWidth || 260) + 20;
     row.scrollBy({ left: +b.dataset.scroll * step * (LANG === 'ar' ? -1 : 1), behavior: LITE ? 'auto' : 'smooth' });
   }));
+
+  const syncArrows = () => $$('.topics-nav', app).forEach((nav) => { const row = $('#' + nav.querySelector('[data-row]')?.dataset.row); if (row) nav.classList.toggle('off', row.scrollWidth <= row.clientWidth + 4); });
+  syncArrows(); addEventListener('resize', syncArrows); state.cleanups.push(() => removeEventListener('resize', syncArrows));
 
   // pause the hero's small loops whenever it is off-screen (and always in lite mode)
   const hero = $('#hero'), art = $('.art', hero);
@@ -403,7 +411,7 @@ function authShell(title, text, formHtml) {
 
 function viewLogin(app) {
   app.innerHTML = authShell(t('Welcome back'), t('Log in and carry on where you left off.'), `
-    <span class="eyebrow">${t('Log in')}</span><h2>${t('Log in')}</h2>
+    <h2>${t('Log in')}</h2>
     <form id="f"><div class="field"><label>${t('Email or mobile number')}</label><input name="login" required autocomplete="username" dir="ltr"></div>
     <div class="field"><label>${t('Password')}</label><input name="password" type="password" required autocomplete="current-password"></div>
     <p class="err"></p><button class="btn shu block">${t('Log in')}</button></form>
@@ -412,7 +420,7 @@ function viewLogin(app) {
     e.preventDefault();
     try {
       state.me = await api('/auth/login', { body: Object.fromEntries(new FormData(e.target)) });
-      toast(t('Welcome, {name}!', { name: state.me.name.split(' ')[0] }), true);
+      toast(t('Welcome, {name}!', { name: state.firstName(me.name) }), true);
       location.hash = state.me.role === 'admin' ? '/admin' : (sessionStorage.getItem('next') || '/dashboard');
       sessionStorage.removeItem('next');
     } catch (err) { $('.err').textContent = err.message; }
@@ -421,7 +429,7 @@ function viewLogin(app) {
 
 function viewRegister(app) {
   app.innerHTML = authShell(t('Begin your journey'), t('One account for lessons, exams, your wallet and your progress.'), `
-    <span class="eyebrow">${t('New account')}</span><h2>${t('Create account')}</h2>
+    <h2>${t('Create account')}</h2>
     <form id="f"><div class="field"><label>${t('Full name')}</label><input name="name" required></div>
     <div class="two"><div class="field"><label>${t('Mobile number')}</label><input name="phone" required inputmode="tel" placeholder="01xxxxxxxxx"></div>
     <div class="field"><label>${t("Parent's mobile")}</label><input name="parent_phone" inputmode="tel"></div></div>
@@ -617,7 +625,7 @@ async function viewDashboard(app) {
   const me = state.me;
   app.innerHTML = `<div class="page"><div class="wrap">
     <div class="welcome reveal"><span class="wsun"></span><span class="wwave seigaiha"></span><span class="avatar">${esc(me.name[0])}</span>
-      <div><h2>${t('Hello, {name}', { name: esc(me.name.split(' ')[0]) })}</h2><p>${esc(me.grade ? t(me.grade) : t('Student'))} · ${t('Step by step, one lesson at a time.')}</p></div></div>
+      <div><h2>${t('Hello, {name}', { name: esc(firstName(me.name)) })}</h2><p>${esc(me.grade ? t(me.grade) : t('Student'))} · ${t('Step by step, one lesson at a time.')}</p></div></div>
     ${d.lastLesson ? `<a class="card row between reveal" href="#/lesson/${d.lastLesson.id}" style="text-decoration:none;margin-bottom:1.5rem"><span><span class="eyebrow">${t('Pick up where you left off')}</span><br><b>${esc(d.lastLesson.title)}</b></span><span class="btn shu sm">${ic('play')} ${t('Resume')}</span></a>` : ''}
     <div class="grid g4" style="margin-bottom:2rem">
       ${[['book', d.courses.length, t('Enrolled courses')], ['check', d.watched, t('Lessons completed')], ['target', d.avgScore == null ? '—' : d.avgScore + '%', t('Average score')], ['wallet', egp(d.balance), t('Wallet balance')]]

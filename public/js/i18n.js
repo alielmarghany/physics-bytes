@@ -27,7 +27,7 @@ const I18N_AR = {
   'With Eng. Ahmed Alaa: a video for every lesson, quizzes and exams marked instantly, and progress tracking step by step.': 'مع م. أحمد علاء: شرح بالفيديو لكل درس، اختبارات وامتحانات بتصحيح فوري، ومتابعة لمستواك خطوة بخطوة.',
   'Continue learning': 'كمّل مذاكرتك', 'Start your journey': 'ابدأ رحلتك', 'Browse courses': 'تصفّح الكورسات', 'Start learning today': 'ابدأ التعلّم اليوم',
   'Browse all': 'عرض الكل', 'Browse all courses': 'كل الكورسات', '{n} courses for every secondary grade': '{n} كورسات لكل صفوف الثانوي', 'Courses are coming soon.': 'الكورسات قريبًا.',
-  'Curriculum': 'المنهج', 'Your path through physics': 'رحلتك في الفيزياء', "Physics isn't memorised —": 'الفيزياء لا تُحفظ…', "it's understood.": 'الفيزياء تُفهم.',
+  'Curriculum': 'المنهج', 'Your path through physics': 'رحلتك في الفيزياء', "Physics isn't memorised.": 'الفيزياء لا تُحفظ…', "It's understood.": 'الفيزياء تُفهم.', 'Light mode': 'الوضع الفاتح', 'Dark mode': 'الوضع الداكن',
   'More than equations, more than grades — learn to see the laws behind everything that moves around you.': 'أكثر من معادلات وأكثر من درجات — تعلّم أن ترى القوانين وراء كل شيء يتحرك حولك.',
   'Features': 'المميزات', 'Everything in one place': 'كل ما تحتاجه في مكان واحد', 'Grades': 'الصفوف', 'Choose your year': 'اختر صفّك', '{n} courses': '{n} كورس',
   'Your first step': 'خطوتك الأولى', 'Step through the gate,': 'ادخل من البوابة،', 'start today.': 'وابدأ الآن.', 'Go to courses': 'اذهب إلى الكورسات', 'Join now': 'اشترك الآن',
