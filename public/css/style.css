@@ -635,3 +635,5 @@ html, body { overflow-x: clip; }
 @media (max-width: 420px) { .grid.g4 { grid-template-columns: 1fr; } }
 .welcome { padding-bottom: 2.8rem; }
 .welcome .wwave { height: 26px; }
+/* labels inside centred blocks stay centred */
+.cta-band .eyebrow, .center .eyebrow, .quote .eyebrow, .empty .eyebrow { margin-inline: auto; }
