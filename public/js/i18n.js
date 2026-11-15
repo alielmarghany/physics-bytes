@@ -162,7 +162,7 @@ Object.assign(I18N_AR, {
   'You are already enrolled in this course.': 'أنت مشترك في هذا الكورس بالفعل.', 'Request not found.': 'الطلب غير موجود.',
   'Play': 'تشغيل', 'Pause': 'إيقاف مؤقت', 'Back 10 seconds': 'رجوع 10 ثوانٍ', 'Forward 10 seconds': 'تقديم 10 ثوانٍ', 'Mute': 'كتم الصوت', 'Unmute': 'تشغيل الصوت',
   'Speed': 'السرعة', 'Full screen': 'ملء الشاشة', 'Exit full screen': 'الخروج من ملء الشاشة', 'Lesson finished': 'انتهى الدرس', 'Replay': 'إعادة التشغيل',
-  'Resumed from': 'استكمال من', 'This video could not be played.': 'تعذّر تشغيل هذا الفيديو.', 'Normal': 'عادية', 'Eng. Ahmed Alaa': 'م. أحمد علاء', 'Physics teacher': 'مدرس الفيزياء',
+  'Resumed from': 'استكمال من', 'This video could not be played.': 'تعذّر تشغيل هذا الفيديو.', 'Normal': 'عادية', 'Tap to unmute': 'اضغط لتشغيل الصوت', 'Eng. Ahmed Alaa': 'م. أحمد علاء', 'Physics teacher': 'مدرس الفيزياء',
 });
 const I18N_AR_PATTERNS = [
   [/^Not enough balance\. You need (\d+) EGP more — recharge your wallet\.$/, 'رصيدك غير كافٍ. تحتاج $1 ج.م إضافية — اشحن محفظتك.'],

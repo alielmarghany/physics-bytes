@@ -806,7 +806,7 @@ async function viewItem(app, params, id) {
       next: nextOpen ? { href: '#/item/' + nextOpen.id, label: nextOpen.title } : null,
       labels: { play: t('Play'), pause: t('Pause'), back: t('Back 10 seconds'), fwd: t('Forward 10 seconds'), mute: t('Mute'), unmute: t('Unmute'), speed: t('Speed'),
         full: t('Full screen'), exitfull: t('Exit full screen'), finished: t('Lesson finished'), replay: t('Replay'), next: t('Next'), resumed: t('Resumed from'),
-        error: t('This video could not be played.'), normal: t('Normal') },
+        error: t('This video could not be played.'), normal: t('Normal'), tapunmute: t('Tap to unmute') },
       onWatched: async () => {
         if (it.completed) return;
         it.completed = true;

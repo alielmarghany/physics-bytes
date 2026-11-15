@@ -46,7 +46,13 @@
     v.src = url; v.preload = 'metadata'; v.playsInline = true; v.setAttribute('playsinline', '');
     v.controlsList = 'nodownload noplaybackrate'; v.disablePictureInPicture = true;
     host.appendChild(v);
-    v.addEventListener('loadedmetadata', () => ev.ready());
+    /* iPhones often skip loading metadata until play is pressed, so don't wait for it to show the controls */
+    let pending = null, isReady = false;
+    const markReady = () => { if (!isReady) { isReady = true; ev.ready(); } };
+    const applyPending = () => { if (pending != null && v.readyState >= 1) { v.currentTime = pending; pending = null; } };
+    v.addEventListener('loadedmetadata', () => { applyPending(); markReady(); ev.duration(); });
+    v.addEventListener('durationchange', () => ev.duration());
+    setTimeout(markReady, 1500);
     v.addEventListener('play', () => ev.state('playing'));
     v.addEventListener('playing', () => ev.state('playing'));
     v.addEventListener('pause', () => ev.state('paused'));
@@ -55,7 +61,8 @@
     v.addEventListener('error', () => ev.error());
     return {
       play: () => v.play().catch(() => {}), pause: () => v.pause(),
-      seek: (t) => { v.currentTime = t; }, time: () => v.currentTime, duration: () => v.duration || 0,
+      seek: (t) => { if (v.readyState >= 1) v.currentTime = t; else pending = t; }, time: () => (pending != null ? pending : v.currentTime),
+      duration: () => (isFinite(v.duration) ? v.duration : 0),
       buffered: () => (v.buffered.length && v.duration ? v.buffered.end(v.buffered.length - 1) / v.duration : 0),
       setVolume: (x) => { v.volume = x / 100; }, setMuted: (m) => { v.muted = m; },
       setRate: (r) => { v.playbackRate = r; }, destroy: () => { v.pause(); v.removeAttribute('src'); v.load(); v.remove(); },
@@ -92,7 +99,7 @@
   function mount(el, opts) {
     const { url, watermark = '', storageKey, next, onWatched, labels = {} } = opts;
     const L = { play: 'Play', pause: 'Pause', back: 'Back 10 seconds', fwd: 'Forward 10 seconds', mute: 'Mute', unmute: 'Unmute', speed: 'Speed', full: 'Full screen',
-      exitfull: 'Exit full screen', finished: 'Lesson finished', replay: 'Replay', next: 'Next', resumed: 'Resumed from', error: 'This video could not be played.', normal: 'Normal', ...labels };
+      exitfull: 'Exit full screen', finished: 'Lesson finished', replay: 'Replay', next: 'Next', resumed: 'Resumed from', error: 'This video could not be played.', normal: 'Normal', tapunmute: 'Tap to unmute', ...labels };
     el.classList.add('pbp');
     el.setAttribute('dir', 'ltr');
     el.tabIndex = 0;
@@ -103,6 +110,7 @@
       <div class="pbp-spin" aria-hidden="true"></div>
       <button class="pbp-big" type="button" aria-label="${L.play}">${svg('play')}</button>
       <div class="pbp-flash" aria-hidden="true"></div>
+      <button class="pbp-unmute" type="button">${svg('mute')} ${L.tapunmute}</button>
       <div class="pbp-end"><b>${L.finished}</b><div class="pbp-end-row"><button type="button" class="pbp-btn wide" data-replay>${svg('replay')} ${L.replay}</button>
         ${next ? `<a class="pbp-btn wide red" href="${next.href}">${L.next}: ${next.label.replace(/[<>&]/g, '')} ${svg('next')}</a>` : ''}</div></div>
       <div class="pbp-err">${L.error}</div>
@@ -140,12 +148,17 @@
         q('[data-toggle]').innerHTML = svg(s === 'playing' || s === 'buffering' ? 'pause' : 'play');
         q('[data-toggle]').setAttribute('aria-label', s === 'playing' ? L.pause : L.play);
         if (!dur) { dur = src.duration(); q('[data-dur]').textContent = fmt(dur); }
-        if (s === 'playing') { set('started', true); startPoll(); wake(); } else { stopPoll(); showBar(); }
+        if (s === 'playing') { set('started', true); wantStart = false; clearTimeout(startT); startPoll(); wake(); } else { stopPoll(); showBar(); }
+        /* the browser stopped a play we asked for before it ever started: it blocked sound, so retry muted */
+        if (s === 'paused' && wantStart) retryMuted();
         if (s === 'ended') { save(0); fireWatched(); }
       },
       error: () => { set('is-error', true); stopPoll(); },
+      duration: () => { const d = src.duration(); if (d) { dur = d; q('[data-dur]').textContent = fmt(d); } },
     };
     const src = ytId(url) ? ytAdapter(media, ytId(url), ev) : fileAdapter(media, url, ev);
+    const touch = window.matchMedia?.('(hover: none)').matches || navigator.maxTouchPoints > 0;
+    if (touch) set('is-touch', true);
 
     function update(t = src.time()) {
       if (!dur) dur = src.duration();
@@ -163,10 +176,28 @@
     const startPoll = () => { stopPoll(); poll = setInterval(() => update(), 250); };
     const stopPoll = () => { clearInterval(poll); poll = 0; if (ready) update(); };
 
-    const toggle = () => { if (!ready) return; if (state === 'playing' || state === 'buffering') src.pause(); else { set('is-ended', false); src.play(); } };
+    /* Some phones (iPhone especially) refuse to start a video with sound unless the tap lands inside the video frame.
+       If nothing has started shortly after pressing play, start it muted and offer a "Tap to unmute" button. */
+    let startT = 0, wantStart = false, mutedRetry = false;
+    const retryMuted = () => {
+      clearTimeout(startT);
+      if (!wantStart || mutedRetry || el.classList.contains('started')) return;
+      mutedRetry = true; muted = true; src.setMuted(true); syncVol(); set('need-unmute', true); src.play();
+    };
+    const startPlay = () => {
+      src.play();
+      clearTimeout(startT);
+      if (el.classList.contains('started')) return;
+      wantStart = true;
+      startT = setTimeout(retryMuted, 3000);
+    };
+    const toggle = () => {
+      if (!ready) return;
+      if (state === 'playing' || state === 'buffering') { wantStart = false; clearTimeout(startT); src.pause(); } else { set('is-ended', false); startPlay(); }
+    };
     const seekBy = (d) => { if (!ready) return; const t = Math.max(0, Math.min((dur || src.duration()) - 0.5, src.time() + d)); src.seek(t); update(t); flash(`${d > 0 ? '+' : '−'}${Math.abs(d)}s`); wake(); };
     const setVol = (v) => { vol = Math.max(0, Math.min(100, v)); muted = vol === 0; src.setVolume(vol); src.setMuted(muted); syncVol(); };
-    const toggleMute = () => { muted = !muted; src.setMuted(muted); if (!muted && vol === 0) setVol(50); syncVol(); flash(muted ? svg('mute') : svg('vol')); };
+    const toggleMute = () => { muted = !muted; src.setMuted(muted); if (!muted && vol === 0) setVol(50); syncVol(); flash(muted ? svg('mute') : svg('vol')); if (!muted) set('need-unmute', false); };
     const syncVol = () => { q('[data-mute]').innerHTML = svg(muted || vol === 0 ? 'mute' : 'vol'); q('[data-mute]').setAttribute('aria-label', muted ? L.unmute : L.mute); q('.pbp-vol input').value = muted ? 0 : vol; };
     const setRate = (r) => { rate = r; src.setRate(r); q('[data-speedbtn]').textContent = `${r}×`; el.querySelectorAll('[data-rate]').forEach((b) => b.classList.toggle('on', +b.dataset.rate === r)); flash(`${r}×`); };
 
@@ -175,21 +206,30 @@
     const toggleFull = () => {
       if (isFull()) {
         if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-        else { el.classList.remove('pseudo-full'); document.body.style.overflow = ''; syncFull(); }
+        else { el.classList.remove('pseudo-full'); syncFull(); }
       } else if (el.requestFullscreen || el.webkitRequestFullscreen) {
         const req = (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
-        if (req && req.catch) req.catch(() => { el.classList.add('pseudo-full'); document.body.style.overflow = 'hidden'; syncFull(); });
-      } else { el.classList.add('pseudo-full'); document.body.style.overflow = 'hidden'; syncFull(); }
+        if (req && req.then) req.then(() => { try { screen.orientation?.lock?.('landscape').catch(() => {}); } catch (e) { /* not supported */ } }, pseudoFull);
+        /* some in-app and phone browsers ignore the request without saying so */
+        setTimeout(() => { if (!document.fullscreenElement && !document.webkitFullscreenElement && !el.classList.contains('pseudo-full')) pseudoFull(); }, 700);
+      } else pseudoFull();
     };
-    const syncFull = () => { const f = isFull(); q('[data-full]').innerHTML = svg(f ? 'exitfull' : 'full'); q('[data-full]').setAttribute('aria-label', f ? L.exitfull : L.full); set('is-full', f); };
+    /* iPhone has no fullscreen for page elements: fill the screen ourselves */
+    const pseudoFull = () => { el.classList.add('pseudo-full'); document.documentElement.classList.add('pbp-locked'); syncFull(); };
+    const syncFull = () => {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) { try { screen.orientation?.unlock?.(); } catch (e) { /* not supported */ } }
+      if (!el.classList.contains('pseudo-full')) document.documentElement.classList.remove('pbp-locked');
+      const f = isFull();q('[data-full]').innerHTML = svg(f ? 'exitfull' : 'full'); q('[data-full]').setAttribute('aria-label', f ? L.exitfull : L.full); set('is-full', f); };
     document.addEventListener('fullscreenchange', syncFull);
     document.addEventListener('webkitfullscreenchange', syncFull);
 
     /* auto-hide controls while playing */
     const showBar = () => { set('show-bar', true); clearTimeout(hideT); };
     const wake = () => { showBar(); if (state === 'playing') hideT = setTimeout(() => { if (!el.querySelector('.pbp-speed.open')) set('show-bar', false); }, 2600); };
-    el.addEventListener('pointermove', wake);
-    el.addEventListener('pointerleave', () => state === 'playing' && set('show-bar', false));
+    el.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') wake(); });
+    /* touch screens fire pointerleave after every tap, which would hide the controls straight away */
+    el.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && state === 'playing') set('show-bar', false); });
+    q('.pbp-bar').addEventListener('pointerdown', () => wake());
 
     /* shield: click = play/pause, double-click = fullscreen, double-tap left/right = ±10s on touch */
     let lastTap = 0, tapT = 0;
@@ -208,13 +248,14 @@
     q('[data-back]').onclick = () => seekBy(-10);
     q('[data-fwd]').onclick = () => seekBy(10);
     q('[data-mute]').onclick = toggleMute;
+    q('.pbp-unmute').onclick = (e) => { e.stopPropagation(); if (muted) toggleMute(); set('need-unmute', false); if (state !== 'playing') src.play(); };
     q('.pbp-vol input').oninput = (e) => setVol(+e.target.value);
     q('[data-full]').onclick = toggleFull;
-    q('[data-replay]').onclick = () => { src.seek(0); set('is-ended', false); src.play(); };
+    q('[data-replay]').onclick = () => { src.seek(0); set('is-ended', false); startPlay(); };
     const speed = q('.pbp-speed');
-    q('[data-speedbtn]').onclick = (e) => { e.stopPropagation(); speed.classList.toggle('open'); showBar(); };
-    el.querySelectorAll('[data-rate]').forEach((b) => (b.onclick = () => { setRate(+b.dataset.rate); speed.classList.remove('open'); wake(); }));
-    const closeMenu = (e) => { if (!speed.contains(e.target)) speed.classList.remove('open'); };
+    q('[data-speedbtn]').onclick = (e) => { e.stopPropagation(); speed.classList.toggle('open'); set('menu-open', speed.classList.contains('open')); showBar(); };
+    el.querySelectorAll('[data-rate]').forEach((b) => (b.onclick = () => { setRate(+b.dataset.rate); speed.classList.remove('open'); set('menu-open', false); wake(); }));
+    const closeMenu = (e) => { if (!speed.contains(e.target)) { speed.classList.remove('open'); set('menu-open', false); } };
     document.addEventListener('pointerdown', closeMenu);
     rate = 1; q('[data-speedbtn]').textContent = '1×'; el.querySelectorAll('[data-rate]').forEach((b) => b.classList.toggle('on', +b.dataset.rate === 1));
 
@@ -260,12 +301,12 @@
     return {
       destroy() {
         if (ready && storageKey && state !== 'ended') save(src.time());
-        stopPoll(); clearInterval(wmT); clearTimeout(hideT);
+        stopPoll(); clearInterval(wmT); clearTimeout(hideT); clearTimeout(startT); clearTimeout(tapT);
         document.removeEventListener('keydown', onKey);
         document.removeEventListener('pointerdown', closeMenu);
         document.removeEventListener('fullscreenchange', syncFull);
         document.removeEventListener('webkitfullscreenchange', syncFull);
-        if (el.classList.contains('pseudo-full')) document.body.style.overflow = '';
+        document.documentElement.classList.remove('pbp-locked');
         src.destroy();
       },
     };
