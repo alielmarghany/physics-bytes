@@ -128,35 +128,35 @@ if (!one('SELECT id FROM users WHERE role = ?', 'admin')) {
   const email = process.env.ADMIN_EMAIL || 'admin@ahmedalaa.com';
   const pw = process.env.ADMIN_PASSWORD || crypto.randomBytes(9).toString('base64url'); // random unless set
   run('INSERT INTO users (name,email,phone,password_hash,role) VALUES (?,?,?,?,?)',
-    'م. أحمد علاء', email, '01000000000', hashPassword(pw), 'admin');
+    'Eng. Ahmed Alaa', email, '01000000000', hashPassword(pw), 'admin');
   console.log(`\n  Admin created → ${email} / ${pw}  (change it after first login)\n`);
 }
 if (!one('SELECT id FROM categories')) {
   const cats = [
-    ['الصف الأول الثانوي', 'الصف الأول الثانوي', 'الأساسيات: القياس والحركة والمتجهات.', ''],
-    ['الصف الثاني الثانوي', 'الصف الثاني الثانوي', 'الموجات والصوت والضوء والموائع والحرارة.', ''],
-    ['الصف الثالث الثانوي', 'الصف الثالث الثانوي', 'الكهربية والمغناطيسية والفيزياء الحديثة.', ''],
+    ['First Secondary', '1st Secondary', 'Foundations: measurement, motion & vectors.', ''],
+    ['Second Secondary', '2nd Secondary', 'Waves, sound, light, fluids & heat.', ''],
+    ['Third Secondary', '3rd Secondary', 'Electricity, magnetism & modern physics.', ''],
   ];
   cats.forEach((c, i) => run('INSERT INTO categories (name,grade,description,kanji,sort) VALUES (?,?,?,?,?)', ...c, i));
   const c1 = run('INSERT INTO courses (category_id,title,description,price,kanji) VALUES (?,?,?,?,?)',
-    3, 'التيار الكهربي وقانون أوم', 'افهم التيار والمقاومة وقانوني كيرشوف ومسائل الدوائر — خطوة بخطوة.', 150, 'bolt').lastInsertRowid;
+    3, 'Electric Current & Ohm\'s Law', 'Master current, resistance, Kirchhoff\'s laws and circuit problems — step by step.', 150, 'bolt').lastInsertRowid;
   const c2 = run('INSERT INTO courses (category_id,title,description,price,kanji) VALUES (?,?,?,?,?)',
-    1, 'الحركة في خط مستقيم', 'الإزاحة والسرعة والعجلة ومعادلات الحركة مع امتحانات محلولة.', 120, 'pendulum').lastInsertRowid;
+    1, 'Motion in a Straight Line', 'Displacement, velocity, acceleration and the equations of motion with solved exams.', 120, 'pendulum').lastInsertRowid;
   run('INSERT INTO courses (category_id,title,description,price,kanji) VALUES (?,?,?,?,?)',
-    2, 'الموجات والصوت', 'خصائص الموجات والتداخل والرنين وفيزياء الصوت.', 0, 'wave');
-  const chs = [[c1, 'الفصل الأول — التيار الكهربي'], [c1, 'الفصل الثاني — قانونا كيرشوف'], [c2, 'الفصل الأول — وصف الحركة']];
+    2, 'Waves & Sound', 'Wave properties, interference, resonance and the physics of sound.', 0, 'wave');
+  const chs = [[c1, 'Chapter 1 — Electric Current'], [c1, 'Chapter 2 — Kirchhoff\'s Laws'], [c2, 'Chapter 1 — Describing Motion']];
   chs.forEach(([cid, t], i) => {
     const ch = run('INSERT INTO chapters (course_id,title,sort) VALUES (?,?,?)', cid, t, i).lastInsertRowid;
-    run('INSERT INTO lessons (chapter_id,title,description,duration_min,is_free,max_views,sort) VALUES (?,?,?,?,?,?,?)', ch, 'الدرس الأول — المفاهيم', 'الأفكار الأساسية والتعريفات.', 45, i === 0 ? 1 : 0, 3, 0);
-    run('INSERT INTO lessons (chapter_id,title,description,duration_min,is_free,max_views,sort) VALUES (?,?,?,?,?,?,?)', ch, 'الدرس الثاني — مسائل محلولة', 'مسائل بنظام الامتحان محلولة على السبورة.', 60, 0, 3, 1);
+    run('INSERT INTO lessons (chapter_id,title,description,duration_min,is_free,max_views,sort) VALUES (?,?,?,?,?,?,?)', ch, 'Lesson 1 — Concepts', 'Core ideas and definitions.', 45, i === 0 ? 1 : 0, 3, 0);
+    run('INSERT INTO lessons (chapter_id,title,description,duration_min,is_free,max_views,sort) VALUES (?,?,?,?,?,?,?)', ch, 'Lesson 2 — Solved Problems', 'Exam-style problems solved on the board.', 60, 0, 3, 1);
   });
-  const qz = run('INSERT INTO quizzes (course_id,chapter_id,title,type,duration_min,pass_score) VALUES (?,?,?,?,?,?)', c1, 1, 'اختبار — التيار الكهربي', 'quiz', 10, 50).lastInsertRowid;
+  const qz = run('INSERT INTO quizzes (course_id,chapter_id,title,type,duration_min,pass_score) VALUES (?,?,?,?,?,?)', c1, 1, 'Quiz — Electric Current', 'quiz', 10, 50).lastInsertRowid;
   [
-    ['وحدة قياس شدة التيار الكهربي في النظام الدولي هي:', ['الفولت', 'الأمبير', 'الأوم', 'الكولوم'], 1, 'تقاس شدة التيار بالأمبير (A) = كولوم/ثانية.'],
-    ['بطارية 12 فولت تمرر تيارًا 3 أمبير في مقاومة. قيمة المقاومة:', ['36 Ω', '4 Ω', '0.25 Ω', '15 Ω'], 1, 'R = V / I = 12 / 3 = 4 Ω.'],
-    ['عند مضاعفة طول سلك (من نفس المادة ونفس المساحة) فإن مقاومته:', ['تقل للنصف', 'لا تتغير', 'تتضاعف', 'تزيد أربع مرات'], 2, 'R = ρL/A إذن R ∝ L.'],
+    ['The SI unit of electric current is:', ['Volt', 'Ampere', 'Ohm', 'Coulomb'], 1, 'Current is measured in amperes (A) = C/s.'],
+    ['A 12 V battery drives 3 A through a resistor. Its resistance is:', ['36 Ω', '4 Ω', '0.25 Ω', '15 Ω'], 1, 'R = V / I = 12 / 3 = 4 Ω.'],
+    ['Doubling the length of a wire (same material & area) makes its resistance:', ['Half', 'Same', 'Double', 'Four times'], 2, 'R = ρL/A, so R ∝ L.'],
   ].forEach(([t, o, c, e], i) => run('INSERT INTO questions (quiz_id,text,options,correct_index,explanation,sort) VALUES (?,?,?,?,?,?)', qz, t, JSON.stringify(o), c, e, i));
-  run('INSERT INTO quizzes (course_id,chapter_id,title,type,duration_min,pass_score,max_attempts) VALUES (?,?,?,?,?,?,?)', c1, null, 'الامتحان النهائي — الكهربية التيارية', 'exam', 30, 60, 1);
+  run('INSERT INTO quizzes (course_id,chapter_id,title,type,duration_min,pass_score,max_attempts) VALUES (?,?,?,?,?,?,?)', c1, null, 'Final Exam — Current Electricity', 'exam', 30, 60, 1);
 }
 
 // ---------- app ----------
@@ -172,8 +172,8 @@ app.use((req, res, next) => {
   if (req.user?.blocked) req.user = null;
   next();
 });
-const auth = (req, res, next) => (req.user ? next() : res.status(401).json({ error: 'سجّل الدخول أولًا.' }));
-const admin = (req, res, next) => (req.user?.role === 'admin' ? next() : res.status(403).json({ error: 'هذه الصفحة للمسؤولين فقط.' }));
+const auth = (req, res, next) => (req.user ? next() : res.status(401).json({ error: 'Please log in first.' }));
+const admin = (req, res, next) => (req.user?.role === 'admin' ? next() : res.status(403).json({ error: 'Admins only.' }));
 const bad = (res, msg, code = 400) => res.status(code).json({ error: msg });
 function setSession(res, id) {
   res.setHeader('Set-Cookie', `token=${makeToken(id)}; HttpOnly; Path=/; Max-Age=${30 * 86400}; SameSite=Lax`);
@@ -187,10 +187,10 @@ function hasAccess(user, course) {
 // ---------- auth ----------
 app.post('/api/auth/register', (req, res) => {
   const { name, email, phone, parent_phone, grade, password } = req.body || {};
-  if (!name || !email || !phone || !password) return bad(res, 'الاسم والبريد والموبايل وكلمة المرور مطلوبة.');
-  if (password.length < 6) return bad(res, 'كلمة المرور يجب ألا تقل عن 6 أحرف.');
-  if (!/^\S+@\S+\.\S+$/.test(email)) return bad(res, 'أدخل بريدًا إلكترونيًا صحيحًا.');
-  if (one('SELECT id FROM users WHERE email=? OR phone=?', email.toLowerCase(), phone)) return bad(res, 'البريد أو رقم الموبايل مسجّل بالفعل.');
+  if (!name || !email || !phone || !password) return bad(res, 'Name, email, phone and password are required.');
+  if (password.length < 6) return bad(res, 'Password must be at least 6 characters.');
+  if (!/^\S+@\S+\.\S+$/.test(email)) return bad(res, 'Enter a valid email.');
+  if (one('SELECT id FROM users WHERE email=? OR phone=?', email.toLowerCase(), phone)) return bad(res, 'Email or phone already registered.');
   const id = run('INSERT INTO users (name,email,phone,parent_phone,grade,password_hash) VALUES (?,?,?,?,?,?)',
     name.trim(), email.toLowerCase().trim(), phone.trim(), parent_phone || null, grade || null, hashPassword(password)).lastInsertRowid;
   setSession(res, id);
@@ -199,8 +199,8 @@ app.post('/api/auth/register', (req, res) => {
 app.post('/api/auth/login', (req, res) => {
   const { login, password } = req.body || {};
   const u = one('SELECT * FROM users WHERE email=? OR phone=?', String(login || '').toLowerCase().trim(), String(login || '').trim());
-  if (!u || !checkPassword(password || '', u.password_hash)) return bad(res, 'البريد/الموبايل أو كلمة المرور غير صحيحة.', 401);
-  if (u.blocked) return bad(res, 'هذا الحساب موقوف. تواصل مع الدعم.', 403);
+  if (!u || !checkPassword(password || '', u.password_hash)) return bad(res, 'Wrong email/phone or password.', 401);
+  if (u.blocked) return bad(res, 'This account is suspended. Contact support.', 403);
   setSession(res, u.id);
   res.json(one(`SELECT ${USER_COLS} FROM users WHERE id=?`, u.id));
 });
@@ -213,8 +213,8 @@ app.put('/api/me', auth, (req, res) => {
   const { name, parent_phone, grade, password, current_password } = req.body || {};
   if (password) {
     const u = one('SELECT password_hash FROM users WHERE id=?', req.user.id);
-    if (!checkPassword(current_password || '', u.password_hash)) return bad(res, 'كلمة المرور الحالية غير صحيحة.');
-    if (password.length < 6) return bad(res, 'كلمة المرور يجب ألا تقل عن 6 أحرف.');
+    if (!checkPassword(current_password || '', u.password_hash)) return bad(res, 'Current password is wrong.');
+    if (password.length < 6) return bad(res, 'Password must be at least 6 characters.');
     run('UPDATE users SET password_hash=? WHERE id=?', hashPassword(password), req.user.id);
   }
   run('UPDATE users SET name=COALESCE(?,name), parent_phone=COALESCE(?,parent_phone), grade=COALESCE(?,grade) WHERE id=?',
@@ -264,14 +264,14 @@ function courseOutline(course, user) {
 }
 app.get('/api/courses/:id', (req, res) => {
   const c = one('SELECT c.*, cat.name category FROM courses c LEFT JOIN categories cat ON cat.id=c.category_id WHERE c.id=?', req.params.id);
-  if (!c || (!c.published && req.user?.role !== 'admin')) return bad(res, 'الكورس غير موجود.', 404);
+  if (!c || (!c.published && req.user?.role !== 'admin')) return bad(res, 'Course not found.', 404);
   res.json({ ...c, access: hasAccess(req.user, c), enrolled: req.user ? isEnrolled(req.user.id, c.id) : false, ...courseOutline(c, req.user) });
 });
 app.post('/api/courses/:id/enroll', auth, (req, res) => {
   const c = one('SELECT * FROM courses WHERE id=? AND published=1', req.params.id);
-  if (!c) return bad(res, 'الكورس غير موجود.', 404);
+  if (!c) return bad(res, 'Course not found.', 404);
   if (isEnrolled(req.user.id, c.id)) return res.json({ ok: true, balance: req.user.balance });
-  if (req.user.balance < c.price) return bad(res, `رصيدك غير كافٍ. تحتاج ${c.price - req.user.balance} ج.م إضافية — اشحن محفظتك.`, 402);
+  if (req.user.balance < c.price) return bad(res, `Not enough balance. You need ${c.price - req.user.balance} EGP more — recharge your wallet.`, 402);
   tx(() => {
     run('UPDATE users SET balance=balance-? WHERE id=?', c.price, req.user.id);
     run('INSERT INTO enrollments (user_id,course_id,price_paid) VALUES (?,?,?)', req.user.id, c.id, c.price);
@@ -283,13 +283,13 @@ app.post('/api/courses/:id/enroll', auth, (req, res) => {
 // ---------- lessons ----------
 app.get('/api/lessons/:id', (req, res) => {
   const l = one('SELECT l.*, ch.course_id, ch.title chapter_title FROM lessons l JOIN chapters ch ON ch.id=l.chapter_id WHERE l.id=?', req.params.id);
-  if (!l) return bad(res, 'الدرس غير موجود.', 404);
+  if (!l) return bad(res, 'Lesson not found.', 404);
   const course = one('SELECT * FROM courses WHERE id=?', l.course_id);
-  if (!req.user) return bad(res, 'سجّل الدخول لمشاهدة الدروس.', 401);
-  if (!l.is_free && !hasAccess(req.user, course)) return bad(res, 'اشترك في الكورس لفتح هذا الدرس.', 403);
+  if (!req.user) return bad(res, 'Please log in to watch lessons.', 401);
+  if (!l.is_free && !hasAccess(req.user, course)) return bad(res, 'Enroll in this course to unlock the lesson.', 403);
   let p = one('SELECT * FROM lesson_progress WHERE user_id=? AND lesson_id=?', req.user.id, l.id);
   if (req.user.role !== 'admin') {
-    if (l.max_views && p && p.views >= l.max_views) return bad(res, `استنفدت كل المشاهدات المتاحة (${l.max_views}) لهذا الدرس. اطلب من م. أحمد إعادة تفعيلها.`, 403);
+    if (l.max_views && p && p.views >= l.max_views) return bad(res, `You used all ${l.max_views} views for this lesson. Ask Mr. Ahmed to reset them.`, 403);
     run(`INSERT INTO lesson_progress (user_id,lesson_id,views) VALUES (?,?,1)
       ON CONFLICT(user_id,lesson_id) DO UPDATE SET views=views+1, updated_at=datetime('now')`, req.user.id, l.id);
     p = one('SELECT * FROM lesson_progress WHERE user_id=? AND lesson_id=?', req.user.id, l.id);
@@ -306,9 +306,9 @@ app.post('/api/lessons/:id/complete', auth, (req, res) => {
 // ---------- quizzes ----------
 function loadQuiz(req, res) {
   const z = one('SELECT * FROM quizzes WHERE id=?', req.params.id);
-  if (!z) { bad(res, 'الامتحان غير موجود.', 404); return null; }
+  if (!z) { bad(res, 'Exam not found.', 404); return null; }
   const course = one('SELECT * FROM courses WHERE id=?', z.course_id);
-  if (!hasAccess(req.user, course)) { bad(res, 'اشترك في الكورس لدخول هذا الامتحان.', 403); return null; }
+  if (!hasAccess(req.user, course)) { bad(res, 'Enroll in the course to take this exam.', 403); return null; }
   z.course = { id: course.id, title: course.title };
   z.tries = one('SELECT COUNT(*) n FROM attempts WHERE user_id=? AND quiz_id=?', req.user.id, z.id).n;
   return z;
@@ -321,7 +321,7 @@ app.get('/api/quizzes/:id', auth, (req, res) => {
 });
 app.post('/api/quizzes/:id/submit', auth, (req, res) => {
   const z = loadQuiz(req, res); if (!z) return;
-  if (req.user.role !== 'admin' && z.max_attempts && z.tries >= z.max_attempts) return bad(res, 'لا توجد محاولات متبقية لهذا الامتحان.', 403);
+  if (req.user.role !== 'admin' && z.max_attempts && z.tries >= z.max_attempts) return bad(res, 'No attempts left for this exam.', 403);
   const answers = req.body?.answers || {};
   const qs = all('SELECT * FROM questions WHERE quiz_id=? ORDER BY sort,id', z.id);
   let score = 0, total = 0;
@@ -345,12 +345,12 @@ app.get('/api/wallet', auth, (req, res) => res.json({
 app.post('/api/wallet/redeem', auth, (req, res) => {
   const code = String(req.body?.code || '').trim().toUpperCase();
   const c = one('SELECT * FROM codes WHERE code=?', code);
-  if (!c) return bad(res, 'الكود غير صحيح.');
-  if (c.used_by) return bad(res, 'هذا الكود مستخدم من قبل.');
+  if (!c) return bad(res, 'Invalid code.');
+  if (c.used_by) return bad(res, 'This code was already used.');
   tx(() => {
     run("UPDATE codes SET used_by=?, used_at=datetime('now') WHERE code=?", req.user.id, code);
     run('UPDATE users SET balance=balance+? WHERE id=?', c.amount, req.user.id);
-    run('INSERT INTO transactions (user_id,amount,type,note) VALUES (?,?,?,?)', req.user.id, c.amount, 'recharge', `كود ${code}`);
+    run('INSERT INTO transactions (user_id,amount,type,note) VALUES (?,?,?,?)', req.user.id, c.amount, 'recharge', `Code ${code}`);
   });
   res.json({ ok: true, amount: c.amount, balance: one('SELECT balance FROM users WHERE id=?', req.user.id).balance });
 });
@@ -440,7 +440,7 @@ app.get('/api/admin/students', admin, (req, res) => {
 });
 app.get('/api/admin/students/:id', admin, (req, res) => {
   const u = one(`SELECT ${USER_COLS} FROM users WHERE id=?`, req.params.id);
-  if (!u) return bad(res, 'غير موجود', 404);
+  if (!u) return bad(res, 'Not found', 404);
   const courses = all('SELECT c.* FROM enrollments e JOIN courses c ON c.id=e.course_id WHERE e.user_id=?', u.id)
     .map((c) => ({ id: c.id, title: c.title, percent: courseOutline(c, u).percent }));
   res.json({ ...u, courses,
@@ -450,10 +450,10 @@ app.get('/api/admin/students/:id', admin, (req, res) => {
 });
 app.post('/api/admin/students/:id/balance', admin, (req, res) => {
   const amount = parseInt(req.body?.amount, 10);
-  if (!amount) return bad(res, 'أدخل المبلغ.');
+  if (!amount) return bad(res, 'Enter an amount.');
   tx(() => {
     run('UPDATE users SET balance=MAX(0,balance+?) WHERE id=?', amount, req.params.id);
-    run('INSERT INTO transactions (user_id,amount,type,note) VALUES (?,?,?,?)', req.params.id, amount, 'admin', req.body.note || 'تعديل يدوي');
+    run('INSERT INTO transactions (user_id,amount,type,note) VALUES (?,?,?,?)', req.params.id, amount, 'admin', req.body.note || 'Manual adjustment');
   });
   res.json({ ok: true });
 });
@@ -480,7 +480,7 @@ app.get('/api/admin/codes', admin, (req, res) => res.json(all(
 app.post('/api/admin/codes', admin, (req, res) => {
   const count = Math.min(500, Math.max(1, parseInt(req.body?.count, 10) || 1));
   const amount = parseInt(req.body?.amount, 10);
-  if (!amount || amount < 1) return bad(res, 'أدخل قيمة صحيحة.');
+  if (!amount || amount < 1) return bad(res, 'Enter a valid amount.');
   const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const gen = () => 'AA-' + [4, 4].map((len) => Array.from(crypto.randomBytes(len), (b) => A[b % A.length]).join('')).join('-');
   const made = [];
@@ -492,10 +492,10 @@ app.delete('/api/admin/codes/:code', admin, (req, res) => {
   res.json({ ok: true });
 });
 
-app.use('/api', (req, res) => bad(res, 'غير موجود', 404));
+app.use('/api', (req, res) => bad(res, 'Not found', 404));
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ error: err.message?.includes('UNIQUE') ? 'هذه القيمة موجودة بالفعل.' : 'حدث خطأ في الخادم.' });
+  res.status(500).json({ error: err.message?.includes('UNIQUE') ? 'That value already exists.' : 'Server error.' });
 });
 
 app.listen(PORT, () => console.log(`  Physics Bytes platform → http://localhost:${PORT}`));
