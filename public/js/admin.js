@@ -1,4 +1,4 @@
-/* Admin dashboard (English default, Arabic option): stats, categories, courses/chapters/lessons, quizzes, students, codes */
+/* Admin dashboard (English default, Arabic option): stats, categories, courses → units → lessons → items, quizzes, students, codes */
 (() => {
   const T = (table) => ({
     list: (q = '') => api(`/admin/t/${table}${q}`),
@@ -14,7 +14,7 @@
   window.viewAdmin = async (app, params, tab = 'overview', id) => {
     app.innerHTML = `<div class="admin"><aside class="admin-side"><div class="sk">${t('Admin panel')}</div>
       ${TABS().map(([k, i, l]) => `<a href="#/admin/${k}" class="${k === tab ? 'on' : ''}">${ic(i)}${l}</a>`).join('')}
-      <a href="#/courses">${ic('eye')}${t('View site')}</a></aside><div class="admin-main page" id="am"></div></div>`;
+      <a href="#/dashboard">${ic('home')}${t('Student area')}</a><a href="#/">${ic('eye')}${t('View site')}</a></aside><div class="admin-main page" id="am"></div></div>`;
     const el = $('#am');
     const views = { overview, courses, categories, quizzes, students, codes };
     await (views[tab] || overview)(el, id, params);
@@ -33,7 +33,7 @@
     el.innerHTML = `${head(t('Statistics'), t('Overview'), `<a class="btn shu sm" href="#/admin/courses">${ic('plus')} ${t('New course')}</a>`)}
       <div class="grid g4" style="margin-bottom:1.5rem">
         ${[['users', s.students, t('Students · +{n} this week', { n: s.newStudents7 })], ['wallet', egp(s.revenue), t('Course sales')], ['book', s.enrollments, t('Enrolments')], ['eye', s.views, t('Video views')],
-          ['play', s.lessons, t('Lessons in {n} courses', { n: s.courses })], ['quiz', s.attemptsCount, t('Exam attempts · avg {n}%', { n: s.avgScore })], ['ticket', egp(s.recharged), t('Total recharged')], ['tag', s.codesUnused, t('Unused codes')]]
+          ['play', s.lessons, t('Items in {n} courses', { n: s.courses })], ['quiz', s.attemptsCount, t('Exam attempts · avg {n}%', { n: s.avgScore })], ['ticket', egp(s.recharged), t('Total recharged')], ['tag', s.codesUnused, t('Unused codes')]]
           .map(([k, v, l], i) => `<div class="card kpi reveal zoom" style="--d:${i * .04}s"><div class="v mono">${v}</div><div class="l">${l}</div><span class="kic">${ic(k)}</span></div>`).join('')}
       </div>
       <div class="grid g2" style="margin-bottom:1.5rem">
@@ -64,17 +64,22 @@
   const courseFields = (cats) => [
     { k: 'title', label: t('Course title'), required: true },
     { k: 'category_id', label: t('Category'), type: 'select', options: [['', t('— none —')], ...cats.map((c) => [c.id, c.name])] },
-    { k: 'description', label: t('Description'), type: 'textarea' },
+    { k: 'description', label: t('Short description'), type: 'textarea' },
+    { k: 'about', label: t('About the course (longer text)'), type: 'textarea' },
     { k: 'price', label: t('Price (EGP) — 0 = free'), type: 'number', default: 0 },
-    { k: 'kanji', label: t('Cover icon'), type: 'select', options: ICON_CHOICES(), default: 'atom' },
+    { k: 'teacher', label: t('Teacher'), default: 'Eng. Ahmed Alaa' },
+    { k: 'subject', label: t('Subject'), default: 'Physics' },
+    { k: 'icon', label: t('Cover icon'), type: 'select', options: ICON_CHOICES(), default: 'atom' },
+    { k: 'cover_url', label: t('Cover image link (optional)'), placeholder: 'https://…', hint: t('Leave empty to use the generated cover.') },
     { k: 'sort', label: t('Order'), type: 'number', default: 0 },
     { k: 'published', label: t('Published (visible to students)'), type: 'checkbox', default: 1 },
   ];
-  const lessonFields = () => [
-    { k: 'title', label: t('Lesson title'), required: true },
-    { k: 'video_url', label: t('Video link'), placeholder: 'YouTube / Vimeo / Google Drive / .mp4', hint: t('Tip: upload to YouTube as Unlisted, or to Vimeo with domain privacy, then paste the link.') },
-    { k: 'description', label: t('Description'), type: 'textarea' },
-    { k: 'attachment_url', label: t('Notes / homework PDF link (optional)') },
+  const sectionFields = () => [{ k: 'title', label: t('Unit title'), required: true, placeholder: 'Lecture notes / Homework / Exams…' }, { k: 'sort', label: t('Order'), type: 'number', default: 0 }];
+  const lessonFields = () => [{ k: 'title', label: t('Lesson title'), required: true }, { k: 'sort', label: t('Order'), type: 'number', default: 0 }];
+  const itemFields = () => [
+    { k: 'title', label: t('Title'), required: true, placeholder: 'Part 1 - From 1 to 25' },
+    { k: 'kind', label: t('Type'), type: 'select', options: [['video', t('Video')], ['file', t('File')], ['audio', t('Audio')]], default: 'video' },
+    { k: 'url', label: t('Link'), placeholder: 'YouTube / Vimeo / Google Drive / .mp4 / .pdf / .mp3', hint: t('Tip: upload to YouTube as Unlisted, or to Vimeo with domain privacy, then paste the link.') },
     { k: 'duration_min', label: t('Duration (minutes)'), type: 'number', default: 0 },
     { k: 'max_views', label: t('Max views per student (0 = unlimited)'), type: 'number', default: 3 },
     { k: 'sort', label: t('Order'), type: 'number', default: 0 },
@@ -84,42 +89,49 @@
     const [list, cats] = await Promise.all([api('/admin/courses'), api('/categories')]);
     if (id) return courseTree(el, id, cats);
     el.innerHTML = `${head(t('Courses'), t('Courses & videos'), `<button class="btn shu sm" id="add">${ic('plus')} ${t('New course')}</button>`)}
-      <div class="grid g3">${list.map((c, i) => `<div class="card course-card reveal" style="cursor:default;--d:${(i % 3) * .06}s">${coverHtml(c, 'style="height:110px"')}
+      <div class="grid g3">${list.map((c, i) => `<div class="card course-card reveal" style="cursor:default;--d:${(i % 3) * .06}s">${coverArt(c, '', 'style="height:120px"')}
         <div class="course-body"><div class="row"><span class="tag">${esc(c.category || t('No category'))}</span>${c.published ? `<span class="tag green">${t('Published')}</span>` : `<span class="tag">${t('Draft')}</span>`}</div>
         <h3>${esc(c.title)}</h3><div class="row between small"><span>${c.price ? egp(c.price) : t('Free')}</span><span class="muted">${t('{n} students', { n: c.students })}</span></div>
         <div class="row"><a class="btn sm" href="#/admin/courses/${c.id}">${t('Manage content')}</a><button class="icon-btn" data-edit="${c.id}" aria-label="${t('Edit')}">${ic('edit')}</button><button class="icon-btn del" data-del="${c.id}" aria-label="${t('Delete')}">${ic('trash')}</button></div></div></div>`).join('')}</div>
       ${!list.length ? `<div class="empty"><div class="ei">${ic('book')}</div>${t('No courses yet.')}</div>` : ''}`;
     $('#add').onclick = () => formModal(t('New course'), courseFields(cats), {}, async (d) => { const c = await T('courses').create(d); location.hash = `/admin/courses/${c.id}`; });
-    $$('[data-edit]', el).forEach((b) => (b.onclick = () => { const c = list.find((x) => x.id == b.dataset.edit); formModal(t('Edit course'), courseFields(cats), { ...c, kanji: courseIcon(c) }, async (d) => { await T('courses').update(b.dataset.edit, d); reload(); }); }));
+    $$('[data-edit]', el).forEach((b) => (b.onclick = () => formModal(t('Edit course'), courseFields(cats), list.find((x) => x.id == b.dataset.edit), async (d) => { await T('courses').update(b.dataset.edit, d); reload(); })));
     $$('[data-del]', el).forEach((b) => (b.onclick = async () => { if (await confirmBox(t('This deletes the course with all its chapters, lessons, quizzes and enrolments.'))) { await T('courses').remove(b.dataset.del); reload(); } }));
     animateIn(el);
   }
   async function courseTree(el, id, cats) {
-    const { course, chapters, quizzes: qz } = await api(`/admin/courses/${id}/tree`);
+    const { course, sections, quizzes: qz } = await api(`/admin/courses/${id}/tree`);
+    const kindIc = (k) => ({ video: 'play', file: 'file', audio: 'audio' }[k] || 'play');
     el.innerHTML = `<a href="#/admin/courses" class="back">${ic('prev')} ${t('All courses')}</a>
-      ${head(course.published ? t('Published') : t('Draft'), esc(course.title), `<button class="btn ghost sm" id="editc">${ic('edit')} ${t('Course details')}</button><a class="btn ghost sm" href="#/course/${id}">${ic('eye')} ${t('Preview')}</a><button class="btn shu sm" id="addch">${ic('plus')} ${t('Chapter')}</button>`)}
-      ${chapters.map((ch, i) => `<div class="tree-ch"><header><span class="tag ai">${t('Chapter {n}', { n: i + 1 })}</span>${esc(ch.title)}<span class="spacer"></span>
-          <button class="btn sm ghost" data-addl="${ch.id}">${ic('plus')} ${t('Lesson')}</button><button class="btn sm ghost" data-addq="${ch.id}">${ic('plus')} ${t('Quiz')}</button>
-          <button class="icon-btn" data-editch="${ch.id}" aria-label="${t('Edit')}">${ic('edit')}</button><button class="icon-btn del" data-delch="${ch.id}" aria-label="${t('Delete')}">${ic('trash')}</button></header>
-        ${ch.lessons.map((l) => `<div class="tl">${l.video_url ? ic('play') : `<span title="${t('No video yet')}" style="color:var(--shu)">${ic('x')}</span>`}<b>${esc(l.title)}</b>
-          ${l.is_free ? `<span class="tag green">${t('Free')}</span>` : ''}${l.max_views ? `<span class="tag">${t('{n} views', { n: l.max_views })}</span>` : ''}<span class="muted small">${t('{n} min', { n: l.duration_min || 0 })}</span>
-          <span class="spacer"></span><button class="icon-btn" data-editl="${l.id}">${ic('edit')} ${t('Edit')}</button><button class="icon-btn del" data-dell="${l.id}" aria-label="${t('Delete')}">${ic('trash')}</button></div>`).join('')}
-        ${qz.filter((z) => z.chapter_id === ch.id).map((z) => `<div class="tl"><span style="color:var(--shu)">${ic('quiz')}</span><b>${esc(z.title)}</b><span class="tag">${t('{n} Q', { n: z.qcount })}</span>
+      ${head(course.published ? t('Published') : t('Draft'), esc(course.title), `<button class="btn ghost sm" id="editc">${ic('edit')} ${t('Course details')}</button><a class="btn ghost sm" href="#/course/${id}">${ic('eye')} ${t('Preview')}</a><button class="btn shu sm" id="addsec">${ic('plus')} ${t('Unit')}</button>`)}
+      <p class="info-pill">${ic('info')} ${t('Structure: Unit → Lesson → Items (videos, files, audio). Quizzes can sit inside a unit; exams sit at the end of the course.')}</p>
+      ${sections.map((s, i) => `<div class="tree-ch"><header><span class="tag ai">${t('Unit')} ${pad2(i + 1)}</span>${esc(s.title)}<span class="spacer"></span>
+          <button class="btn sm ghost" data-addl="${s.id}">${ic('plus')} ${t('Lesson')}</button><button class="btn sm ghost" data-addq="${s.id}">${ic('plus')} ${t('Quiz')}</button>
+          <button class="icon-btn" data-edits="${s.id}" aria-label="${t('Edit')}">${ic('edit')}</button><button class="icon-btn del" data-dels="${s.id}" aria-label="${t('Delete')}">${ic('trash')}</button></header>
+        ${s.lessons.map((l, li) => `<div class="tl lesson-row"><span class="tag">${t('Lesson')} ${pad2(li + 1)}</span><b>${esc(l.title)}</b><span class="spacer"></span>
+            <button class="btn sm ghost" data-addi="${l.id}">${ic('plus')} ${t('Item')}</button><button class="icon-btn" data-editl="${l.id}" aria-label="${t('Edit')}">${ic('edit')}</button><button class="icon-btn del" data-dell="${l.id}" aria-label="${t('Delete')}">${ic('trash')}</button></div>
+          ${l.items.map((it) => `<div class="tl item-row">${it.url ? ic(kindIc(it.kind)) : `<span title="${t('No link yet')}" style="color:var(--shu)">${ic('x')}</span>`}<span>${esc(it.title)}</span>
+            <span class="tag">${t({ video: 'Video', file: 'File', audio: 'Audio' }[it.kind] || 'Video')}</span>${it.is_free ? `<span class="tag green">${t('Free')}</span>` : ''}${it.max_views ? `<span class="tag">${t('{n} views', { n: it.max_views })}</span>` : ''}
+            <span class="spacer"></span><button class="icon-btn" data-editi="${it.id}">${ic('edit')} ${t('Edit')}</button><button class="icon-btn del" data-deli="${it.id}" aria-label="${t('Delete')}">${ic('trash')}</button></div>`).join('')}`).join('')}
+        ${qz.filter((z) => z.section_id === s.id).map((z) => `<div class="tl"><span style="color:var(--shu)">${ic('quiz')}</span><b>${esc(z.title)}</b><span class="tag">${t('{n} Q', { n: z.qcount })}</span>
           <span class="spacer"></span><a class="icon-btn" href="#/admin/quizzes/${z.id}">${ic('edit')} ${t('Questions')}</a></div>`).join('')}
-        ${!ch.lessons.length ? `<div class="tl muted small">${t('No lessons yet.')}</div>` : ''}</div>`).join('') || `<div class="empty"><div class="ei">${ic('layers')}</div>${t('Add the first chapter.')}</div>`}
+        ${!s.lessons.length ? `<div class="tl muted small">${t('No lessons yet.')}</div>` : ''}</div>`).join('') || `<div class="empty"><div class="ei">${ic('layers')}</div>${t('Add the first unit.')}</div>`}
       <div class="tree-ch"><header><span class="tag shu">${ic('target')}</span>${t('Course exams')}<span class="spacer"></span><button class="btn sm ghost" data-addq="">${ic('plus')} ${t('Exam')}</button></header>
-        ${qz.filter((z) => !z.chapter_id).map((z) => `<div class="tl"><b>${esc(z.title)}</b><span class="tag">${t('{n} Q', { n: z.qcount })}</span><span class="spacer"></span><a class="icon-btn" href="#/admin/quizzes/${z.id}">${ic('edit')} ${t('Questions')}</a></div>`).join('') || `<div class="tl muted small">${t('No exams yet.')}</div>`}</div>`;
-    const lessons = chapters.flatMap((c) => c.lessons);
-    const chFields = [{ k: 'title', label: t('Chapter title'), required: true }, { k: 'sort', label: t('Order'), type: 'number' }];
-    $('#editc').onclick = () => formModal(t('Edit course'), courseFields(cats), { ...course, kanji: courseIcon(course) }, async (d) => { await T('courses').update(id, d); reload(); });
-    $('#addch').onclick = () => formModal(t('New chapter'), chFields, { sort: chapters.length }, async (d) => { await T('chapters').create({ ...d, course_id: id }); reload(); });
-    $$('[data-editch]', el).forEach((b) => (b.onclick = () => formModal(t('Edit chapter'), chFields, chapters.find((c) => c.id == b.dataset.editch), async (d) => { await T('chapters').update(b.dataset.editch, d); reload(); })));
-    $$('[data-delch]', el).forEach((b) => (b.onclick = async () => { if (await confirmBox(t('Delete this chapter with all its lessons and quizzes?'))) { await T('chapters').remove(b.dataset.delch); reload(); } }));
-    $$('[data-addl]', el).forEach((b) => (b.onclick = () => formModal(t('New lesson'), lessonFields(), { sort: chapters.find((c) => c.id == b.dataset.addl).lessons.length }, async (d) => { await T('lessons').create({ ...d, chapter_id: b.dataset.addl }); reload(); })));
+        ${qz.filter((z) => !z.section_id).map((z) => `<div class="tl"><b>${esc(z.title)}</b><span class="tag">${t('{n} Q', { n: z.qcount })}</span><span class="spacer"></span><a class="icon-btn" href="#/admin/quizzes/${z.id}">${ic('edit')} ${t('Questions')}</a></div>`).join('') || `<div class="tl muted small">${t('No exams yet.')}</div>`}</div>`;
+    const lessons = sections.flatMap((s) => s.lessons);
+    const items = lessons.flatMap((l) => l.items);
+    $('#editc').onclick = () => formModal(t('Edit course'), courseFields(cats), course, async (d) => { await T('courses').update(id, d); reload(); });
+    $('#addsec').onclick = () => formModal(t('New unit'), sectionFields(), { sort: sections.length }, async (d) => { await T('sections').create({ ...d, course_id: +id }); reload(); });
+    $$('[data-edits]', el).forEach((b) => (b.onclick = () => formModal(t('Edit unit'), sectionFields(), sections.find((s) => s.id == b.dataset.edits), async (d) => { await T('sections').update(b.dataset.edits, d); reload(); })));
+    $$('[data-dels]', el).forEach((b) => (b.onclick = async () => { if (await confirmBox(t('Delete this unit with all its lessons, items and quizzes?'))) { await T('sections').remove(b.dataset.dels); reload(); } }));
+    $$('[data-addl]', el).forEach((b) => (b.onclick = () => formModal(t('New lesson'), lessonFields(), { sort: sections.find((s) => s.id == b.dataset.addl).lessons.length }, async (d) => { await T('lessons').create({ ...d, section_id: +b.dataset.addl }); reload(); })));
     $$('[data-editl]', el).forEach((b) => (b.onclick = () => formModal(t('Edit lesson'), lessonFields(), lessons.find((l) => l.id == b.dataset.editl), async (d) => { await T('lessons').update(b.dataset.editl, d); reload(); })));
-    $$('[data-dell]', el).forEach((b) => (b.onclick = async () => { if (await confirmBox(t('Delete this lesson?'))) { await T('lessons').remove(b.dataset.dell); reload(); } }));
-    $$('[data-addq]', el).forEach((b) => (b.onclick = () => formModal(b.dataset.addq ? t('New chapter quiz') : t('New exam'), quizFields(), { type: b.dataset.addq ? 'quiz' : 'exam' }, async (d) => {
-      const z = await T('quizzes').create({ ...d, course_id: id, chapter_id: b.dataset.addq || null }); location.hash = `/admin/quizzes/${z.id}`;
+    $$('[data-dell]', el).forEach((b) => (b.onclick = async () => { if (await confirmBox(t('Delete this lesson and its items?'))) { await T('lessons').remove(b.dataset.dell); reload(); } }));
+    $$('[data-addi]', el).forEach((b) => (b.onclick = () => formModal(t('New item'), itemFields(), { sort: lessons.find((l) => l.id == b.dataset.addi).items.length }, async (d) => { await T('items').create({ ...d, lesson_id: +b.dataset.addi }); reload(); })));
+    $$('[data-editi]', el).forEach((b) => (b.onclick = () => formModal(t('Edit item'), itemFields(), items.find((x) => x.id == b.dataset.editi), async (d) => { await T('items').update(b.dataset.editi, d); reload(); })));
+    $$('[data-deli]', el).forEach((b) => (b.onclick = async () => { if (await confirmBox(t('Delete this item?'))) { await T('items').remove(b.dataset.deli); reload(); } }));
+    $$('[data-addq]', el).forEach((b) => (b.onclick = () => formModal(b.dataset.addq ? t('New unit quiz') : t('New exam'), quizFields(), { type: b.dataset.addq ? 'quiz' : 'exam' }, async (d) => {
+      const z = await T('quizzes').create({ ...d, course_id: +id, section_id: b.dataset.addq ? +b.dataset.addq : null }); location.hash = `/admin/quizzes/${z.id}`;
     })));
   }
 
@@ -134,21 +146,22 @@
   async function quizzes(el, id) {
     if (id) return quizBuilder(el, id);
     const list = await api('/admin/courses');
-    const all = (await Promise.all(list.map((c) => T('quizzes').list(`?course_id=${c.id}`).then((zs) => zs.map((z) => ({ ...z, course: c.title })))))).flat();
+    const zs = await T('quizzes').list();
+    const all = zs.map((z) => ({ ...z, course: list.find((c) => c.id === z.course_id)?.title || '' }));
     el.innerHTML = `${head(t('Quizzes'), t('Quizzes & exams'), `<button class="btn shu sm" id="add">${ic('plus')} ${t('New quiz')}</button>`)}
       <div class="card table-wrap"><table class="tbl"><tr><th>${t('Title')}</th><th>${t('Course')}</th><th>${t('Type')}</th><th>${t('Time')}</th><th>${t('Pass')}</th><th></th></tr>
       ${all.map((z) => `<tr><td><b>${esc(z.title)}</b></td><td class="small">${esc(z.course)}</td><td><span class="tag ${z.type === 'exam' ? 'shu' : 'ai'}">${typeName(z.type)}</span></td><td>${t('{n} min', { n: z.duration_min })}</td><td>${z.pass_score}%</td>
         <td style="white-space:nowrap"><a class="btn sm" href="#/admin/quizzes/${z.id}">${t('Questions')}</a> <button class="icon-btn del" data-del="${z.id}" aria-label="${t('Delete')}">${ic('trash')}</button></td></tr>`).join('')}</table>
       ${!all.length ? `<div class="empty"><div class="ei">${ic('quiz')}</div>${t('No quizzes yet.')}</div>` : ''}</div>`;
-    $('#add').onclick = () => formModal(t('New quiz'), [{ k: 'course_id', label: t('Course'), type: 'select', options: list.map((c) => [c.id, c.title]) }, ...quizFields()], {}, async (d) => { const z = await T('quizzes').create(d); location.hash = `/admin/quizzes/${z.id}`; });
+    $('#add').onclick = () => formModal(t('New quiz'), [{ k: 'course_id', label: t('Course'), type: 'select', options: list.map((c) => [c.id, c.title]) }, ...quizFields()], {}, async (d) => { const z = await T('quizzes').create({ ...d, course_id: +d.course_id }); location.hash = `/admin/quizzes/${z.id}`; });
     $$('[data-del]', el).forEach((b) => (b.onclick = async () => { if (await confirmBox(t('Delete this quiz, its questions and all student attempts?'))) { await T('quizzes').remove(b.dataset.del); reload(); } }));
   }
   async function quizBuilder(el, id) {
-    const [zs, qs] = await Promise.all([T('quizzes').list(), T('questions').list(`?quiz_id=${id}`)]);
-    const quiz = zs.find((x) => x.id == id);
+    const [zs, qs] = await Promise.all([T('quizzes').list(`?id=${id}`), api(`/admin/questions/${id}`)]);
+    const quiz = zs[0];
     if (!quiz) throw new Error(t('Quiz not found.'));
     const qCard = (q, i) => {
-      const opts = q ? JSON.parse(q.options) : ['', '', '', ''];
+      const opts = q ? [...q.options] : ['', '', '', ''];
       while (opts.length < 4) opts.push('');
       return `<form class="q-edit" data-id="${q?.id || ''}"><div class="row between"><span class="row"><span class="qn" style="display:inline-grid;place-items:center;min-width:32px;height:32px;border-radius:9px;background:var(--shu);color:#fff;font-weight:700">${i + 1}</span><b>${t('Question')}</b></span>
           <span class="row"><label class="small">${t('Points')} <input class="input" name="points" type="number" min="1" value="${q?.points || 1}" style="width:70px;padding:.3rem .5rem"></label>
@@ -168,8 +181,10 @@
       const options = $$('[name=opt]', f).map((i) => i.value.trim());
       const ci = +(f.correct.value || 0);
       if (!options[ci]) return toast(t('The correct option cannot be empty.'));
-      const body = { quiz_id: id, text: f.text.value, options: JSON.stringify(options.filter(Boolean)), correct_index: options.slice(0, ci).filter(Boolean).length, points: +f.points.value || 1, explanation: f.explanation.value, sort: qs.length };
-      if (f.dataset.id) { delete body.sort; await T('questions').update(f.dataset.id, body); toast(t('Saved.'), true); } else { await T('questions').create(body); toast(t('Question added.'), true); reload(); }
+      const body = { quiz_id: +id, text: f.text.value, options: options.filter(Boolean), correct_index: options.slice(0, ci).filter(Boolean).length, points: +f.points.value || 1, explanation: f.explanation.value, sort: qs.length };
+      try {
+        if (f.dataset.id) { delete body.sort; await T('questions').update(f.dataset.id, body); toast(t('Saved.'), true); } else { await T('questions').create(body); toast(t('Question added.'), true); reload(); }
+      } catch (err) { toast(err.message); }
     }));
     $$('[data-delq]', el).forEach((b) => (b.onclick = async () => { if (await confirmBox(t('Delete this question?'))) { await T('questions').remove(b.dataset.delq); reload(); } }));
     $('#editz').onclick = () => formModal(t('Quiz settings'), quizFields(), quiz, async (d) => { await T('quizzes').update(id, d); reload(); });
@@ -184,7 +199,7 @@
     el.innerHTML = `${head(t('Students'), t('Students'), `<form id="s" class="row"><input class="input" name="q" value="${esc(q)}" placeholder="${t('Search name, email or mobile')}" style="width:260px"><button class="btn sm">${ic('search')} ${t('Search')}</button></form>`)}
       <div class="card table-wrap"><table class="tbl"><tr><th>${t('Name')}</th><th>${t('Mobile')}</th><th>${t('Grade')}</th><th>${t('Courses')}</th><th>${t('Average')}</th><th>${t('Balance')}</th><th>${t('Joined')}</th></tr>
       ${list.map((u) => `<tr style="cursor:pointer" data-go="${u.id}"><td><b>${esc(u.name)}</b>${u.blocked ? ` <span class="tag shu">${t('Blocked')}</span>` : ''}<br><span class="small muted ltr">${esc(u.email)}</span></td>
-        <td><span class="ltr">${esc(u.phone)}</span><br><span class="small muted">${t('Parent')}: <span class="ltr">${esc(u.parent_phone || '—')}</span></span></td><td class="small">${esc(u.grade ? t(u.grade) : '')}</td><td>${u.courses}</td>
+        <td><span class="ltr">${esc(u.phone || '')}</span><br><span class="small muted">${t('Parent')}: <span class="ltr">${esc(u.parent_phone || '—')}</span></span></td><td class="small">${esc(u.grade ? t(u.grade) : '')}</td><td>${u.courses}</td>
         <td>${u.avg == null ? '—' : u.avg + '%'}</td><td>${egp(u.balance)}</td><td class="small">${fmtDate(u.created_at)}</td></tr>`).join('')}</table>
       ${!list.length ? `<div class="empty"><div class="ei">${ic('users')}</div>${t('No students found.')}</div>` : ''}</div>`;
     $('#s').onsubmit = (e) => { e.preventDefault(); location.hash = '/admin/students?q=' + encodeURIComponent(e.target.q.value); };
@@ -194,7 +209,7 @@
     const [u, courses] = await Promise.all([api('/admin/students/' + id), api('/admin/courses')]);
     el.innerHTML = `<a href="#/admin/students" class="back">${ic('prev')} ${t('All students')}</a>
       ${head(esc(u.grade ? t(u.grade) : t('Student')), esc(u.name), `<button class="btn ghost sm" id="bal">${ic('wallet')} ${t('Adjust balance')}</button><button class="btn ghost sm" id="enr">${ic('plus')} ${t('Enrol')}</button><button class="btn ghost sm" id="rv">${ic('repeat')} ${t('Reset views')}</button><button class="btn danger sm" id="blk">${u.blocked ? t('Unblock') : t('Block')}</button>`)}
-      <div class="grid g4" style="margin-bottom:1.5rem">${[['wallet', egp(u.balance), t('Balance')], ['book', u.courses.length, t('Courses')], ['quiz', u.attempts.length, t('Exam attempts')], ['user', `<span class="ltr">${esc(u.phone)}</span>`, `${t('Parent')}: ${esc(u.parent_phone || '—')}`]]
+      <div class="grid g4" style="margin-bottom:1.5rem">${[['wallet', egp(u.balance), t('Balance')], ['book', u.courses.length, t('Courses')], ['quiz', u.attempts.length, t('Exam attempts')], ['user', `<span class="ltr">${esc(u.phone || '')}</span>`, `${t('Parent')}: ${esc(u.parent_phone || '—')}`]]
         .map(([k, v, l]) => `<div class="card kpi"><div class="v" style="font-size:1.35rem">${v}</div><div class="l">${l}</div><span class="kic">${ic(k)}</span></div>`).join('')}</div>
       <div class="grid g2" style="align-items:start">
         <div class="card"><h3>${t('Courses & progress')}</h3>${u.courses.map((c) => `<div style="padding:.6rem 0;border-bottom:1px solid var(--line)"><div class="row between"><b>${esc(c.title)}</b><span class="row small">${c.percent}% <button class="icon-btn del" data-unenroll="${c.id}" aria-label="${t('Remove from course')}">${ic('x')}</button></span></div><div class="progress" style="margin-top:.4rem"><i data-w="${c.percent}"></i></div></div>`).join('') || `<p class="muted">${t('Not enrolled in any course.')}</p>`}</div>

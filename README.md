@@ -1,42 +1,41 @@
-# 物理道 — Mr. Ahmed Alaa Physics Platform
+# Physics Bytes — Eng. Ahmed Alaa
 
-Online physics platform: video lessons by chapter, quizzes & exams, wallet + recharge codes, progress tracking, and an admin dashboard.
+Online physics platform: courses organised as **units → lessons → items** (videos, files, audio), quizzes & exams, wallet + recharge codes, a student area with progress tracking, and an admin dashboard. English by default with an Arabic (RTL) option.
 
-## Run
+## How it works
+
+- `public/` is a static site (no build step). It is published to GitHub Pages on every push to `main` (`.github/workflows/pages.yml`).
+- All data, logins, payments and exam marking live in **Supabase** (project "Physics Bytes"). The browser talks to it with the public anon key in `public/js/api.js`; row-level security and database functions decide what each user may see or do:
+  - video/file links are only returned by `open_item()` to enrolled students (or for free previews), which also enforces the view limit;
+  - exam answers are never sent to the browser — `submit_quiz()` marks them;
+  - buying (`enroll()`), redeeming codes (`redeem_code()`) and every admin action run inside the database.
+
+## Run locally
 
 ```bash
 npm install
 npm start          # http://localhost:3000
 ```
 
-Requires Node 22.13+ (uses the built-in `node:sqlite`). Data lives in `data/platform.db`. Delete the `data/` folder to reset to sample content.
+## Supabase settings to check (Dashboard → Authentication)
 
-## Admin
+- **URL Configuration → Site URL**: `https://alielmarghany.github.io/physics-bytes/` and add `http://localhost:3000` under Redirect URLs, so email-confirmation links open the site.
+- **Sign In / Providers → Email → Confirm email**: on (students confirm their email) or off (they can log in straight away).
 
-First start creates an admin account and prints its email and a random password in the terminal.
+## Making the teacher an admin
 
-Set `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars before the first start to choose them. Change the password after logging in (Profile page).
+Sign up on the site with the teacher's email, then run in the Supabase SQL editor:
 
-Admin pages (`#/admin`):
+```sql
+update public.profiles set role = 'admin' where email = 'teacher@example.com';
+```
 
-| Tab | What it does |
-|---|---|
-| Overview | Students, sales, enrollments, views, 14-day charts, top courses, latest exam attempts |
-| Courses & videos | Create courses → chapters → lessons (video link, free preview, max views, notes PDF) |
-| Categories | Grades/years (1st, 2nd, 3rd Secondary…) |
-| Quizzes & exams | Quiz builder: questions, 4 options, correct answer, points, explanation, timer, pass mark, attempt limit |
-| Students | Search, see progress/scores/views, adjust balance, free enroll, reset views, block |
-| Recharge codes | Generate codes (e.g. 50 × 100 EGP) to sell; students redeem them in their wallet |
+Admin pages (`#/admin`): overview stats, courses (units, lessons, items), categories, quiz builder, students (balance, free enrolment, reset views, block) and recharge codes.
 
-## Videos
+## Videos and files
 
-Paste a link per lesson: YouTube (use **Unlisted**), Vimeo (domain-restricted recommended), Google Drive, or a direct `.mp4`. The player shows a moving watermark with the student's name and phone.
+Each item takes a link: YouTube (use **Unlisted**), Vimeo (domain-restricted recommended), Google Drive, a direct `.mp4`/`.pdf`/`.mp3`. The video player shows a moving watermark with the student's name and phone.
 
 ## Payments
 
-Wallet model: the teacher sells recharge codes (cash / Vodafone Cash / InstaPay), students redeem them, then buy courses with their balance. An online gateway (Paymob, Fawry) can be added later to top up the wallet automatically.
-
-
-## GitHub Pages preview
-
-Every push to `main` publishes `public/` to GitHub Pages as a **design preview** with sample courses (`.github/workflows/pages.yml`). Pages can't run the Node server, so sign-up, lessons, exams and the wallet show a notice there. Preview the same mode locally at `http://localhost:3000/?demo`.
+Wallet model: the teacher sells recharge codes (cash / Vodafone Cash / InstaPay), students redeem them, then buy courses with their balance.
