@@ -149,6 +149,21 @@ Object.assign(I18N_AR, {
   'Delete this unit with all its lessons, items and quizzes?': 'حذف هذه الوحدة بكل دروسها وعناصرها واختباراتها؟', 'Delete this lesson and its items?': 'حذف هذا الدرس وعناصره؟',
   'New item': 'عنصر جديد', 'Edit item': 'تعديل العنصر', 'Delete this item?': 'حذف هذا العنصر؟', 'New unit quiz': 'اختبار وحدة جديد',
 });
+/* join requests and video player */
+Object.assign(I18N_AR, {
+  'or': 'أو', 'Request to join': 'طلب انضمام', 'Paid at the centre? Ask the teacher to add you.': 'دفعت في السنتر؟ اطلب من المدرس إضافتك.',
+  'Request sent': 'تم إرسال الطلب', 'The teacher will review it and add you to the course.': 'سيراجعه المدرس ويضيفك إلى الكورس.', 'Cancel request': 'إلغاء الطلب',
+  'Request cancelled.': 'تم إلغاء الطلب.', 'Your last request was declined. You can send a new one.': 'تم رفض طلبك السابق. يمكنك إرسال طلب جديد.',
+  'Message to the teacher (optional)': 'رسالة للمدرس (اختياري)', 'e.g. I paid at the centre on Saturday.': 'مثال: دفعت في السنتر يوم السبت.',
+  'Request sent — the teacher will review it.': 'تم إرسال الطلب — سيراجعه المدرس.', 'Join requests': 'طلبات الانضمام', 'Requests': 'الطلبات',
+  'Students who paid outside the site (or need access) ask to join a course here. Approving enrols them for free.': 'هنا تظهر طلبات الطلاب الذين دفعوا خارج الموقع أو يحتاجون إلى صلاحية. الموافقة تضيفهم للكورس مجانًا.',
+  'Pending': 'قيد المراجعة', 'Approved': 'مقبول', 'Declined': 'مرفوض', 'Message': 'الرسالة', 'Approve': 'موافقة', 'Decline': 'رفض',
+  'No requests here.': 'لا توجد طلبات هنا.', 'Approved — the student can now open the course.': 'تمت الموافقة — يمكن للطالب فتح الكورس الآن.', 'Decline this request?': 'رفض هذا الطلب؟',
+  'You are already enrolled in this course.': 'أنت مشترك في هذا الكورس بالفعل.', 'Request not found.': 'الطلب غير موجود.',
+  'Play': 'تشغيل', 'Pause': 'إيقاف مؤقت', 'Back 10 seconds': 'رجوع 10 ثوانٍ', 'Forward 10 seconds': 'تقديم 10 ثوانٍ', 'Mute': 'كتم الصوت', 'Unmute': 'تشغيل الصوت',
+  'Speed': 'السرعة', 'Full screen': 'ملء الشاشة', 'Exit full screen': 'الخروج من ملء الشاشة', 'Lesson finished': 'انتهى الدرس', 'Replay': 'إعادة التشغيل',
+  'Resumed from': 'استكمال من', 'This video could not be played.': 'تعذّر تشغيل هذا الفيديو.', 'Normal': 'عادية', 'Eng. Ahmed Alaa': 'م. أحمد علاء', 'Physics teacher': 'مدرس الفيزياء',
+});
 const I18N_AR_PATTERNS = [
   [/^Not enough balance\. You need (\d+) EGP more — recharge your wallet\.$/, 'رصيدك غير كافٍ. تحتاج $1 ج.م إضافية — اشحن محفظتك.'],
   [/^You used all (\d+) views for this lesson\. Ask Mr\. Ahmed to reset them\.$/, 'استنفدت كل المشاهدات المتاحة ($1) لهذا الدرس. اطلب من م. أحمد إعادة تفعيلها.'],

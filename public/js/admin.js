@@ -6,17 +6,18 @@
     update: (id, body) => api(`/admin/t/${table}/${id}`, { method: 'PUT', body }),
     remove: (id) => api(`/admin/t/${table}/${id}`, { method: 'DELETE' }),
   });
-  const TABS = () => [['overview', 'chart', t('Overview')], ['courses', 'book', t('Courses & videos')], ['categories', 'tag', t('Grades & categories')], ['quizzes', 'quiz', t('Quizzes & exams')], ['students', 'users', t('Students')], ['codes', 'ticket', t('Recharge codes')]];
+  const TABS = () => [['overview', 'chart', t('Overview')], ['courses', 'book', t('Courses & videos')], ['categories', 'tag', t('Grades & categories')], ['quizzes', 'quiz', t('Quizzes & exams')], ['requests', 'userplus', t('Join requests')], ['students', 'users', t('Students')], ['codes', 'ticket', t('Recharge codes')]];
   const head = (eyebrow, title, actions = '') => `<div class="page-head"><div><span class="eyebrow">${eyebrow}</span><h1 class="title-line">${title}</h1></div><div class="row">${actions}</div></div>`;
   const reload = () => router();
   const typeName = (x) => (x === 'exam' ? t('Exam') : t('Quiz'));
 
   window.viewAdmin = async (app, params, tab = 'overview', id) => {
     app.innerHTML = `<div class="admin"><aside class="admin-side"><div class="sk">${t('Admin panel')}</div>
-      ${TABS().map(([k, i, l]) => `<a href="#/admin/${k}" class="${k === tab ? 'on' : ''}">${ic(i)}${l}</a>`).join('')}
+      ${TABS().map(([k, i, l]) => `<a href="#/admin/${k}" class="${k === tab ? 'on' : ''}">${ic(i)}${l}${k === 'requests' ? '<span class="badge" id="reqBadge" hidden></span>' : ''}</a>`).join('')}
       <a href="#/dashboard">${ic('home')}${t('Student area')}</a><a href="#/">${ic('eye')}${t('View site')}</a></aside><div class="admin-main page" id="am"></div></div>`;
     const el = $('#am');
-    const views = { overview, courses, categories, quizzes, students, codes };
+    const views = { overview, courses, categories, quizzes, requests, students, codes };
+    api('/admin/pending').then((n) => { const b = $('#reqBadge'); if (b && n) { b.hidden = false; b.textContent = n; } }).catch(() => {});
     await (views[tab] || overview)(el, id, params);
   };
 
@@ -189,6 +190,24 @@
     $$('[data-delq]', el).forEach((b) => (b.onclick = async () => { if (await confirmBox(t('Delete this question?'))) { await T('questions').remove(b.dataset.delq); reload(); } }));
     $('#editz').onclick = () => formModal(t('Quiz settings'), quizFields(), quiz, async (d) => { await T('quizzes').update(id, d); reload(); });
     $('#delz').onclick = async () => { if (await confirmBox(t('Delete this quiz and all attempts?'))) { await T('quizzes').remove(id); location.hash = `/admin/courses/${quiz.course_id}`; } };
+  }
+
+  /* ----- join requests ----- */
+  async function requests(el, id, params) {
+    const status = params.get('status') || 'pending';
+    const list = await api('/admin/requests?status=' + status);
+    const tabs = [['pending', t('Pending')], ['approved', t('Approved')], ['rejected', t('Declined')], ['all', t('All')]];
+    el.innerHTML = `${head(t('Requests'), t('Join requests'))}
+      <p class="muted">${t('Students who paid outside the site (or need access) ask to join a course here. Approving enrols them for free.')}</p>
+      <div class="filters">${tabs.map(([k, l]) => `<a class="chip ${k === status ? 'on' : ''}" href="#/admin/requests?status=${k}">${l}</a>`).join('')}</div>
+      <div class="card table-wrap"><table class="tbl"><tr><th>${t('Student')}</th><th>${t('Course')}</th><th>${t('Message')}</th><th>${t('Date')}</th><th>${t('Status')}</th><th></th></tr>
+      ${list.map((r) => `<tr><td><b>${esc(r.name)}</b><br><span class="small muted ltr">${esc(r.phone || r.email || '')}</span></td>
+        <td>${esc(r.course)}<br><span class="small muted">${r.price ? egp(r.price) : t('Free')}</span></td><td class="small">${esc(r.note || '—')}</td><td class="small">${fmtDate(r.created_at)}</td>
+        <td><span class="tag ${r.status === 'approved' ? 'green' : r.status === 'rejected' ? 'shu' : 'gold'}">${t({ pending: 'Pending', approved: 'Approved', rejected: 'Declined' }[r.status])}</span></td>
+        <td style="white-space:nowrap">${r.status === 'pending' ? `<button class="btn shu sm" data-ok="${r.id}">${ic('check')} ${t('Approve')}</button> <button class="btn danger sm" data-no="${r.id}">${ic('x')} ${t('Decline')}</button>` : ''}</td></tr>`).join('')}</table>
+      ${!list.length ? `<div class="empty"><div class="ei">${ic('userplus')}</div>${t('No requests here.')}</div>` : ''}</div>`;
+    $$('[data-ok]', el).forEach((b) => (b.onclick = async () => { b.disabled = true; await api(`/admin/requests/${b.dataset.ok}/approve`, { method: 'POST' }); toast(t('Approved — the student can now open the course.'), true); reload(); }));
+    $$('[data-no]', el).forEach((b) => (b.onclick = async () => { if (await confirmBox(t('Decline this request?'), t('Decline'))) { await api(`/admin/requests/${b.dataset.no}/reject`, { method: 'POST' }); reload(); } }));
   }
 
   /* ----- students ----- */

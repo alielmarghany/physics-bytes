@@ -324,7 +324,8 @@ async function viewLanding(app) {
       <div class="hero-art rise" style="--d:.1s">
         <div class="hero-sun" aria-hidden="true"></div>
         ${ENSO('hero-enso')}
-        <div class="tcard hero-card"><div class="tcard-in">${HERO_ART}</div><span class="hanko stamp">${ic('atom')}</span></div>
+        <div class="tcard hero-card"><div class="tcard-in">${HERO_ART}</div></div>
+        <figure class="hero-teacher"><img src="img/teacher.webp" alt="${t('Eng. Ahmed Alaa')}" width="600" height="882" fetchpriority="high"><figcaption class="name-tag"><span class="hanko">${ic('atom')}</span><span><b>${t('Eng. Ahmed Alaa')}</b><small>${t('Physics teacher')}</small></span></figcaption></figure>
         ${CLOUD}
       </div>
     </div>
@@ -702,7 +703,7 @@ async function viewCourse(app, params, id) {
               .map(([k, v, l]) => `<div class="kpi card"><div class="v">${v}</div><div class="l">${l}</div><span class="kic">${ic(k)}</span></div>`).join('')}</div></div>
         </div>
         <div class="tab-pane" data-pane="teacher">
-          <div class="card teacher-card"><img src="img/logo-mark.png" alt="" width="54" height="72"><div><h3>${esc(c.teacher)}</h3>
+          <div class="card teacher-card"><span class="t-photo"><img src="img/teacher.webp" alt="" width="600" height="882" loading="lazy"></span><div><h3>${esc(c.teacher)}</h3>
             <p class="muted">${t('Physics teacher for secondary school. Clear explanations, plenty of solved problems and exams that prepare you for the real thing.')}</p></div></div>
         </div>
       </div>
@@ -713,7 +714,9 @@ async function viewCourse(app, params, id) {
           : `<div class="price" style="font-size:2rem">${priceHtml(c.price)}</div>
             <p class="muted small">${t('Lifetime access to every lesson, quiz and exam in this course.')}</p>
             <button class="btn shu block" id="enroll">${state.me ? (c.price ? t('Buy with wallet') : t('Enrol for free')) : t('Log in to enrol')}</button>
-            ${state.me ? `<p class="small muted center" style="margin:.6rem 0 0">${t('Balance')}: <b>${egp(state.me.balance)}</b> · <a href="#/wallet">${t('Top up')}</a></p>` : ''}`}
+            ${state.me ? `<p class="small muted center" style="margin:.6rem 0 0">${t('Balance')}: <b>${egp(state.me.balance)}</b> · <a href="#/wallet">${t('Top up')}</a></p>` : ''}
+            <div class="or-line"><span>${t('or')}</span></div>
+            <div id="reqBox"></div>`}
           ${state.me ? `<button class="btn ghost block fav-btn ${c.favorite ? 'on' : ''}" id="fav">${ic('heart')} <span>${c.favorite ? t('Remove from favourites') : t('Add to favourites')}</span></button>` : ''}
           <ul class="checks">
             <li>${ic('check')} ${t('{n} videos', { n: c.counts.video })}</li>
@@ -732,6 +735,25 @@ async function viewCourse(app, params, id) {
     $$('.tab-pane', app).forEach((p) => p.classList.toggle('on', p.dataset.pane === b.dataset.tab));
   }));
   $$('[data-locked]', app).forEach((a) => a.addEventListener('click', () => toast(state.me ? t('Enrol in the course to unlock this.') : t('Log in and enrol to unlock this.'))));
+  const reqBox = $('#reqBox');
+  const drawReq = async () => {
+    if (!reqBox) return;
+    if (!state.me) { reqBox.innerHTML = `<a class="btn ghost block" href="#/login">${ic('userplus')} ${t('Request to join')}</a><p class="small muted center" style="margin:.5rem 0 0">${t('Paid at the centre? Ask the teacher to add you.')}</p>`; return; }
+    const st = await api(`/courses/${c.id}/request`).catch(() => null);
+    if (st === 'pending') {
+      reqBox.innerHTML = `<div class="req-box"><span class="req-ic">${ic('clock')}</span><div><b>${t('Request sent')}</b><small>${t('The teacher will review it and add you to the course.')}</small></div></div>
+        <button class="btn ghost block sm" id="reqCancel" style="margin-top:.6rem">${t('Cancel request')}</button>`;
+      $('#reqCancel').onclick = async () => { await api(`/courses/${c.id}/request`, { method: 'DELETE' }); toast(t('Request cancelled.'), true); drawReq(); };
+      return;
+    }
+    reqBox.innerHTML = `${st === 'rejected' ? `<p class="small muted center" style="margin:0 0 .5rem">${t('Your last request was declined. You can send a new one.')}</p>` : ''}
+      <button class="btn ghost block" id="reqBtn">${ic('userplus')} ${t('Request to join')}</button>
+      <p class="small muted center" style="margin:.5rem 0 0">${t('Paid at the centre? Ask the teacher to add you.')}</p>`;
+    $('#reqBtn').onclick = () => formModal(t('Request to join'), [{ k: 'note', label: t('Message to the teacher (optional)'), type: 'textarea', placeholder: t('e.g. I paid at the centre on Saturday.') }], {}, async (d) => {
+      await api(`/courses/${c.id}/request`, { body: d }); toast(t('Request sent — the teacher will review it.'), true); drawReq();
+    });
+  };
+  drawReq();
   $('#fav')?.addEventListener('click', async () => {
     const on = await api(`/courses/${c.id}/favorite`, { method: 'POST' });
     $('#fav').classList.toggle('on', on); $('#fav span').textContent = on ? t('Remove from favourites') : t('Add to favourites');
@@ -759,7 +781,8 @@ async function viewItem(app, params, id) {
   let media;
   if (it.kind === 'audio') media = it.url ? `<div class="audio-box"><span class="hanko">${ic('audio')}</span><audio controls controlsList="nodownload" preload="metadata" src="${esc(it.url)}"></audio></div>` : null;
   else if (it.kind === 'file') media = it.url ? `<div class="player file">${/\.pdf(\?|$)/i.test(it.url) || /drive\.google/.test(it.url) ? embedVideo(it.url) : ''}</div><a class="btn ghost sm" target="_blank" rel="noopener" href="${esc(it.url)}" style="margin-top:.8rem">${ic('file')} ${t('Open file')}</a>` : null;
-  else { const v = embedVideo(it.url); media = v ? `<div class="player">${v}<span class="wm">${esc(it.watermark)}</span></div>` : null; }
+  else if (PBPlayer.supported(it.url)) media = '<div id="pbp"></div>';
+  else { const v = embedVideo(it.url); media = v ? `<div class="player">${v}<span class="wm red-wm">${esc(it.watermark)}</span></div>` : null; }
   app.innerHTML = `<div class="page"><a href="#/course/${c.id}" class="back">${ic('prev')} ${esc(c.title)}</a>
     <div class="lesson-layout" style="margin-top:1rem">
       <div>
@@ -776,6 +799,23 @@ async function viewItem(app, params, id) {
         return `<a class="item ${x.done ? 'done' : ''} ${x.id === it.id ? 'current' : ''} ${open ? '' : 'locked'}" href="${open ? `#/item/${x.id}` : 'javascript:void 0'}"><span class="ii">${ic(x.done ? 'check' : open ? KIND_ICON[x.kind] || 'play' : 'lock')}</span><span>${esc(x.title)}</span></a>`;
       }).join('')}`).join('')}${s.quizzes.map((z) => `<a class="item" href="#/quiz/${z.id}"><span class="ii q">${ic('quiz')}</span><span>${esc(z.title)}</span></a>`).join('')}`).join('')}</aside>
     </div></div>`;
+  const nextOpen = next && (c.access || next.is_free) ? next : null;
+  if ($('#pbp')) {
+    const player = PBPlayer.mount($('#pbp'), {
+      url: it.url, watermark: it.watermark, storageKey: 'pb-pos-' + it.id,
+      next: nextOpen ? { href: '#/item/' + nextOpen.id, label: nextOpen.title } : null,
+      labels: { play: t('Play'), pause: t('Pause'), back: t('Back 10 seconds'), fwd: t('Forward 10 seconds'), mute: t('Mute'), unmute: t('Unmute'), speed: t('Speed'),
+        full: t('Full screen'), exitfull: t('Exit full screen'), finished: t('Lesson finished'), replay: t('Replay'), next: t('Next'), resumed: t('Resumed from'),
+        error: t('This video could not be played.'), normal: t('Normal') },
+      onWatched: async () => {
+        if (it.completed) return;
+        it.completed = true;
+        await api(`/items/${it.id}/complete`, { method: 'POST' }).catch(() => {});
+        const b = $('#done'); if (b) { b.className = 'btn ghost sm'; b.innerHTML = `${ic('check')} ${t('Completed')}`; }
+      },
+    });
+    state.cleanups.push(() => player.destroy());
+  }
   $('.side-outline .current', app)?.scrollIntoView({ block: 'center' });
   scrollTo(0, 0);
   $('#done').onclick = async () => {

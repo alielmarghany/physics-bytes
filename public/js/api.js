@@ -96,6 +96,11 @@ async function api(path, opts = {}) {
   if ((m = p.match(/^\/courses\/(\d+)$/))) return rpc('course_detail', { cid: +m[1] });
   if ((m = p.match(/^\/courses\/(\d+)\/enroll$/))) return rpc('enroll', { cid: +m[1] });
   if ((m = p.match(/^\/courses\/(\d+)\/favorite$/))) return rpc('toggle_favorite', { cid: +m[1] });
+  if ((m = p.match(/^\/courses\/(\d+)\/request$/))) {
+    if (method === 'DELETE') return rpc('cancel_enrollment_request', { cid: +m[1] });
+    if (method === 'GET') return rpc('my_request_status', { cid: +m[1] });
+    return rpc('request_enrollment', { cid: +m[1], p_note: body.note || null });
+  }
 
   /* ----- learning ----- */
   if ((m = p.match(/^\/items\/(\d+)$/))) return rpc('open_item', { iid: +m[1] });
@@ -112,6 +117,9 @@ async function api(path, opts = {}) {
 
   /* ----- admin ----- */
   if (p === '/admin/stats') return rpc('admin_stats');
+  if (p === '/admin/pending') return rpc('admin_pending_requests');
+  if (p === '/admin/requests') return rpc('admin_requests', { p_status: query.get('status') === 'all' ? null : (query.get('status') || 'pending') });
+  if ((m = p.match(/^\/admin\/requests\/(\d+)\/(approve|reject)$/))) return rpc('admin_decide_request', { rid: +m[1], approve: m[2] === 'approve' });
   if (p === '/admin/courses') return rpc('admin_courses');
   if ((m = p.match(/^\/admin\/courses\/(\d+)\/tree$/))) return rpc('admin_course_tree', { cid: +m[1] });
   if ((m = p.match(/^\/admin\/questions\/(\d+)$/))) return rpc('admin_questions', { qid: +m[1] });
