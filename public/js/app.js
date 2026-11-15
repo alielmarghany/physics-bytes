@@ -324,8 +324,7 @@ async function viewLanding(app) {
       <div class="hero-art rise" style="--d:.1s">
         <div class="hero-sun" aria-hidden="true"></div>
         ${ENSO('hero-enso')}
-        <div class="tcard hero-card"><div class="tcard-in">${HERO_ART}</div></div>
-        <figure class="hero-teacher"><img src="img/teacher.webp" alt="${t('Eng. Ahmed Alaa')}" width="600" height="882" fetchpriority="high"><figcaption class="name-tag"><span class="hanko">${ic('atom')}</span><span><b>${t('Eng. Ahmed Alaa')}</b><small>${t('Physics teacher')}</small></span></figcaption></figure>
+        <div class="tcard hero-card"><div class="tcard-in">${HERO_ART}</div><span class="hanko stamp">${ic('atom')}</span></div>
         ${CLOUD}
       </div>
     </div>
@@ -703,7 +702,7 @@ async function viewCourse(app, params, id) {
               .map(([k, v, l]) => `<div class="kpi card"><div class="v">${v}</div><div class="l">${l}</div><span class="kic">${ic(k)}</span></div>`).join('')}</div></div>
         </div>
         <div class="tab-pane" data-pane="teacher">
-          <div class="card teacher-card"><span class="t-photo"><img src="img/teacher.webp" alt="" width="600" height="882" loading="lazy"></span><div><h3>${esc(c.teacher)}</h3>
+          <div class="card teacher-card"><img src="img/logo-mark.png" alt="" width="54" height="72"><div><h3>${esc(c.teacher)}</h3>
             <p class="muted">${t('Physics teacher for secondary school. Clear explanations, plenty of solved problems and exams that prepare you for the real thing.')}</p></div></div>
         </div>
       </div>
