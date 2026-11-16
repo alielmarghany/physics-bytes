@@ -491,6 +491,8 @@ async function viewCourses(app, params) {
 }
 
 /* =================================================================== student area (sidebar shell) */
+/* scroll the page and, in Arabic on wide screens, the content pane that scrolls on its own */
+const toTop = () => { scrollTo(0, 0); $('.shell-main')?.scrollTo(0, 0); $('.admin-main')?.scrollTo(0, 0); };
 const SHELL_ROUTES = ['/dashboard', '/my-courses', '/my-exams', '/favorites', '/wallet', '/profile', '/courses', '/course/', '/item/', '/quiz/'];
 const isShellPath = (path) => !!state.me && SHELL_ROUTES.some((r) => (r.endsWith('/') ? path.startsWith(r) : path === r));
 const inShellNow = () => document.body.classList.contains('in-shell');
@@ -816,7 +818,7 @@ async function viewItem(app, params, id) {
     state.cleanups.push(() => player.destroy());
   }
   $('.side-outline .current', app)?.scrollIntoView({ block: 'center' });
-  scrollTo(0, 0);
+  toTop();
   $('#done').onclick = async () => {
     await api(`/items/${it.id}/complete`, { method: 'POST' });
     toast(t('Nice work — lesson completed!'), true);
@@ -887,7 +889,7 @@ async function viewQuiz(app, params, id) {
         ${q.options.map((o, oi) => { const mine = q.chosen !== null && +q.chosen === oi; return `<div class="option ${oi === q.correct ? 'right' : mine ? 'wrong' : ''}">${oi === q.correct ? ic('check') : mine ? ic('x') : '<span style="width:18px"></span>'} ${esc(o)}</div>`; }).join('')}
         ${q.explanation ? `<p class="small" style="margin:.8rem 0 0"><b>${t('Explanation')}:</b> ${esc(q.explanation)}</p>` : ''}</div>`).join('')}
     </div></div>`;
-    scrollTo(0, 0);
+    toTop();
   };
   intro();
 }
@@ -977,7 +979,7 @@ async function router() {
   document.body.classList.toggle('in-shell', shell);
   if (shell) app = renderShell(app, path);
   app.innerHTML = '<div class="loader"><span></span></div>';
-  scrollTo(0, 0);
+  toTop();
   try { await view(app, params, ...path.match(re).slice(1)); }
   catch (err) {
     app.innerHTML = `<div class="page"><div class="${shell ? '' : 'wrap'}"><div class="empty"><div class="ei">${ic('x')}</div><h2 style="font-size:2rem">${esc(err.message)}</h2><a class="btn sm" href="#/courses">${t('Back to courses')}</a></div></div></div>`;
