@@ -1,0 +1,33 @@
+# Supabase's free plan pauses a project after about 7 days without activity,
+# which takes every course and login offline. This asks the database for one
+# course every 2 days so it never counts as idle.
+name: Keep database awake
+
+on:
+  schedule:
+    - cron: '17 6 */2 * *'   # 06:17 UTC every 2nd day
+  workflow_dispatch:          # run it by hand from the Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ask Supabase for one course
+        run: |
+          # Same public (anon) key and URL the website itself uses
+          URL=$(grep -o "https://[a-z0-9]*\.supabase\.co" public/js/api.js | head -1)
+          KEY=$(grep -o "eyJ[A-Za-z0-9._-]*" public/js/api.js | head -1)
+          for attempt in 1 2 3; do
+            code=$(curl -s -o out.txt -w "%{http_code}" -m 30 \
+              "$URL/rest/v1/courses?select=id&limit=1" \
+              -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+            echo "Attempt $attempt: HTTP $code"
+            if [ "$code" = "200" ]; then cat out.txt; exit 0; fi
+            sleep 20
+          done
+          echo "::error::Supabase did not answer. The project may be paused: restore it at supabase.com/dashboard."
+          exit 1
