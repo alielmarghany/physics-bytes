@@ -965,6 +965,9 @@ html.pbp-locked .pbp.pseudo-full { padding: env(safe-area-inset-top) env(safe-ar
 /* ---------- admin on phones and small tablets ---------- */
 @media (max-width: 900px) {
   /* tab strip scrolls with the page: a sticky strip 84px down left content showing through above it, behind the floating nav */
+  /* short pages made the grid stretch this row to fill the screen, and the active tab with it */
+  .admin { align-content: start; }
+  .admin-side { align-items: center; align-self: start; }
   .admin-side { position: static; scrollbar-width: none; -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 28px), transparent); padding-inline: 1rem; }
   .admin-side::-webkit-scrollbar { display: none; }
   .admin-side a { padding: .55rem .8rem; font-size: .9rem; }
@@ -984,7 +987,7 @@ html.pbp-locked .pbp.pseudo-full { padding: env(safe-area-inset-top) env(safe-ar
   .tree-ch .tl { padding-inline-start: 1.2rem; }
   .tree-ch .item-row { padding-inline-start: 1.6rem; }
 }
-@media (max-width: 640px) {
+@media (max-width: 760px) {
   /* tables with column headings become one card per row */
   .admin-main .table-wrap { overflow: visible; padding: .4rem 1rem; }
   table.tbl.stack, table.tbl.stack tbody, table.tbl.stack tr, table.tbl.stack td { display: block; width: 100%; }
