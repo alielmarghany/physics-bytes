@@ -19,7 +19,22 @@
     const views = { overview, courses, categories, quizzes, requests, students, codes };
     api('/admin/pending').then((n) => { const b = $('#reqBadge'); if (b && n) { b.hidden = false; b.textContent = n; } }).catch(() => {});
     await (views[tab] || overview)(el, id, params);
+    stackTables(el);
+    const on = $('.admin-side a.on');
+    if (on && matchMedia('(max-width: 900px)').matches) on.scrollIntoView({ block: 'nearest', inline: 'center' });
   };
+
+  /* On phones wide tables become one card per row: each cell is labelled with its column name. */
+  function stackTables(el) {
+    $$('table.tbl', el).forEach((tb) => {
+      const headRow = [...tb.rows].find((r) => r.querySelector('th'));
+      if (!headRow) return;
+      const labels = [...headRow.cells].map((c) => c.textContent.trim());
+      headRow.classList.add('tbl-head');
+      tb.classList.add('stack');
+      [...tb.rows].forEach((r) => { if (r !== headRow) [...r.cells].forEach((c, i) => { if (labels[i] && !c.dataset.label) c.dataset.label = labels[i]; if (!labels[i]) c.classList.add('tbl-actions'); }); });
+    });
+  }
 
   /* ----- overview ----- */
   function bars(rows, key = 'n') {
